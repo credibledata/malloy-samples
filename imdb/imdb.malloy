@@ -12,8 +12,10 @@ include {
   #(doc "Full name")
   public: primaryName
   #(doc "Birth year")
+  # number="####"
   public: birthYear
   #(doc "Death year (null if living)")
+  # number="####"
   public: deathYear
   #(doc "Primary professions (comma-separated)")
   public: primaryProfession
@@ -61,8 +63,10 @@ include {
   #(doc "Adult content flag: 0 or 1")
   public: isAdult
   #(doc "Release year")
+  # number="####"
   public: startYear
   #(doc "End year (for TV series)")
+  # number="####"
   public: endYear
   #(doc "Runtime in minutes")
   public: runtimeMinutes
@@ -236,6 +240,7 @@ extend {
   view: titles_dashboard is {
     group_by:
       movie_image
+      # number="####"
       production_year is startYear
       primaryTitle
       runtimeMinutes

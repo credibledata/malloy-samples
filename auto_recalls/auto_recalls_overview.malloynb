@@ -12,6 +12,10 @@ import 'auto_recalls.malloy'
 >>>markdown
 
 >>>markdown
+### Top 5 Manufacturers — Recall Trends Over Time
+>>>malloy
+run: recalls -> by_year_manufacturer_line_chart
+>>>markdown
 ### Recall Dashboard — Top 3 Manufacturers
 >>>malloy
 run: recalls -> recall_dashboard + {limit: 3}

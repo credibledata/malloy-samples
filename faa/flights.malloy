@@ -112,28 +112,50 @@ include {
   public: aircraft_model_code
   #(doc "Year the aircraft was built")
   public: year_built
-  internal: id
-  internal: aircraft_serial
-  internal: aircraft_engine_code
-  internal: aircraft_type_id
-  internal: aircraft_engine_type_id
-  internal: registrant_type_id
-  internal: name
-  internal: address1
-  internal: address2
-  internal: city
-  internal: state
-  internal: zip
-  internal: region
-  internal: county
-  internal: country
-  internal: certification
-  internal: status_code
-  internal: mode_s_code
-  internal: fract_owner
-  internal: last_action_date
-  internal: cert_issue_date
-  internal: air_worth_date
+  #(doc "Registrant name")
+  public: name
+  #(doc "Registrant street address")
+  public: address1
+  #(doc "Registrant street address line 2")
+  public: address2
+  #(doc "Registrant city")
+  public: city
+  #(doc "Registrant state")
+  public: state
+  #(doc "Registrant ZIP code")
+  public: zip
+  #(doc "FAA region")
+  public: region
+  #(doc "County")
+  public: county
+  #(doc "Country")
+  public: country
+  #(doc "Certification type")
+  public: certification
+  #(doc "Aircraft status code")
+  public: status_code
+  #(doc "Fractional ownership flag")
+  public: fract_owner
+  #(doc "Date of last registration action")
+  public: last_action_date
+  #(doc "Certificate issue date")
+  public: cert_issue_date
+  #(doc "Airworthiness date")
+  public: air_worth_date
+  #(doc "Internal aircraft ID")
+  public: id
+  #(doc "Aircraft serial number")
+  public: aircraft_serial
+  #(doc "Engine code")
+  public: aircraft_engine_code
+  #(doc "Aircraft type ID")
+  public: aircraft_type_id
+  #(doc "Engine type ID")
+  public: aircraft_engine_type_id
+  #(doc "Registrant type ID")
+  public: registrant_type_id
+  #(doc "Mode S transponder code")
+  public: mode_s_code
 }
 extend {
   primary_key: tail_num

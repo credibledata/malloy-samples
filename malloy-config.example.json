@@ -5,7 +5,7 @@
     },
     "bigquery": {
       "is": "bigquery",
-      "projectId": "ms2-dev-469118"
+      "projectId": "YOUR_PROJECT_ID"
     }
   }
 }

@@ -17,9 +17,8 @@ run: exchange_rates -> {
   group_by: data.country_currency_desc
   # line_chart
   nest: by_date is  {
-    group_by: 
-      data.record_date
-      rate is data.exchange_rate::number
+    group_by: data.record_date
+    aggregate: rate is avg(data.exchange_rate::number)
   }
 }
 >>>markdown

@@ -100,6 +100,31 @@ extend {
     order_by: recall_year
   }
 
+  #(doc) Recall trends over time for the top 5 manufacturers by volume
+  # line_chart
+  view: by_year_manufacturer_line_chart is {
+    nest: top_manufacturers is {
+      group_by: manufacturer
+      aggregate: recall_count
+      limit: 5
+    }
+    nest: x is {
+      group_by: manufacturer, recall_year is year(`Report Received Date`)
+      aggregate: recall_count
+    }
+  }
+  -> {
+    where: top_manufacturers.manufacturer = x.manufacturer
+    # x
+    group_by: x.recall_year
+    # y
+    aggregate: recall_count is x.recall_count.sum()
+    # series
+    group_by: x.manufacturer
+    limit: 100000
+    order_by: 1, 2
+  }
+
   #(doc) Recall count, total affected, and share by manufacturer
   view: by_manufacturer is {
     group_by: manufacturer
