@@ -1,0 +1,11 @@
+{
+  "connections": {
+    "duckdb": {
+      "is": "duckdb"
+    },
+    "bigquery": {
+      "is": "bigquery",
+      "projectId": "ms2-dev-469118"
+    }
+  }
+}
