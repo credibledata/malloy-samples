@@ -154,9 +154,9 @@ include {
   #(doc "Carrier code")
   public: carrier
   #(doc "Origin airport code")
-  internal: origin
+  public: origin
   #(doc "Destination airport code")
-  internal: destination
+  public: destination
   #(doc "Flight number")
   public: flight_num
   #(doc "Aircraft tail number")
