@@ -1,6 +1,4 @@
-<<<<<<< Updated upstream
 ##! experimental.access_modifiers
-=======
 // Auto Recalls: CSV example
 ##! m4warnings
 #(filter) name=Manufacturer dimension=Manufacturer type=in
@@ -8,15 +6,12 @@
 #(filter) name="Major Recall" dimension="Major Recall" type=equal
 #(filter) name="Recall After" dimension="Report Received Date" type=greater_than
 #(filter) name="Recall Before" dimension="Report Received Date" type=less_than
+#(doc) NHTSA automobile recall data (1966–2022). Use for recall trends, manufacturer safety analysis, component failure patterns, and identifying major recalls.
 source: recalls is duckdb.table('data/auto_recalls.csv') extend {
   measure:
     recall_count is count()
     percent_of_recalls is recall_count/all(recall_count)*100
     total_defects is `Potentially Affected`.sum()
->>>>>>> Stashed changes
-
-#(doc) NHTSA automobile recall data (1966–2022). Use for recall trends, manufacturer safety analysis, component failure patterns, and identifying major recalls.
-source: recalls is duckdb.table('data/auto_recalls.csv')
 
 include {
   internal: `Report Received Date`
@@ -64,34 +59,17 @@ extend {
     recall_year is `Report Received Date`.year
 
     #(index_values) n=-1
-<<<<<<< Updated upstream
-    #(filter) {"type": "Retrieval"}
-    #(doc) Short description of the recall issue
-    recall_subject is Subject
-
-    #(index_values) n=-1
-    #(filter) {"type": "Star"}
-    #(doc) Manufacturer name
-    manufacturer is Manufacturer
-=======
     Subject is Subject_old
 
     #(index_values) n=-1
     Manufacturer is Manufacturer_old
->>>>>>> Stashed changes
 
     #(index_values) n=-1
-    #(filter) {"type": "Star"}
     #(doc) Vehicle component affected (e.g. STEERING, AIR BAGS, TIRES)
     component is Component
 
-<<<<<<< Updated upstream
-    #(filter) {"type": "Boolean"}
     #(doc) Whether 100,000+ vehicles/units are potentially affected
-    is_major_recall is ifnull(`Potentially Affected`, 0) > 100000
-=======
     `Major Recall` is ifnull(`Potentially Affected`, 0) > 100000
->>>>>>> Stashed changes
 
   measure:
     #(doc) Total number of recalls
