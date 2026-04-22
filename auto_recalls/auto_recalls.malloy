@@ -24,7 +24,6 @@ source: recalls is duckdb.table('data/auto_recalls.csv') extend {
     #(doc) Year the recall was reported (truncated to Jan 1)
     recall_year is `Report Received Date`.year
 
-    #(index_values) n=-1
     Subject is Subject_old
 
     #(index_values) n=-1
