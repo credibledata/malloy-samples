@@ -1,0 +1,9 @@
+{
+  "connections": {
+    "duckdb": {
+      "is": "duckdb",
+      "workingDirectory": "ga4",
+      "securityPolicy": "none"
+    }
+  }
+}

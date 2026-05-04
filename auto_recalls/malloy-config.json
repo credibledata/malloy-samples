@@ -1,0 +1,9 @@
+{
+  "connections": {
+    "duckdb": {
+      "is": "duckdb",
+      "workingDirectory": "auto_recalls",
+      "securityPolicy": "none"
+    }
+  }
+}
