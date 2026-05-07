@@ -1,0 +1,9 @@
+{
+  "connections": {
+    "duckdb": {
+      "is": "duckdb",
+      "workingDirectory": "cubed_data",
+      "securityPolicy": "none"
+    }
+  }
+}
