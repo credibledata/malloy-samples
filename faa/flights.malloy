@@ -1,4 +1,18 @@
-source: carriers is duckdb.table('data/carriers.parquet') extend {
+##! experimental.access_modifiers
+
+source: carriers is duckdb.table('data/carriers.parquet')
+include {
+  public: code
+
+  #(doc) Carrier full name (e.g. "Southwest Airlines").
+  #(index)
+  public: name
+
+  #(doc) Carrier nickname (e.g. "Southwest").
+  #(index)
+  public: nickname
+}
+extend {
   primary_key: code
   measure: carrier_count is count()
 }
