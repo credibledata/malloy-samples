@@ -1,0 +1,13 @@
+>>>markdown
+# Carriers — Runtime Parameters Demo
+
+This notebook demonstrates Malloy [`given:`](https://docs.malloydata.dev/documentation/experiments/givens) runtime parameters in Publisher. Change the **carrier** or **after** values in the Parameters panel above to re-run the queries with new parameter values.
+
+>>>malloy
+import "carriers_with_parameters.malloy"
+
+>>>malloy
+run: spotlight_flights -> carrier_overview
+
+>>>malloy
+run: spotlight_flights -> by_destination
