@@ -1,0 +1,15 @@
+// customers.malloy
+//
+// Fully visible model — control case. Workspace and package pages should
+// render it as a normal, clickable model row.
+##! m4warnings
+
+#(doc) Customer dimension with region and signup date.
+source: customers is duckdb.table('data/customers.csv') extend {
+  primary_key: customer_id
+
+  dimension:
+    name is name
+    region is region
+    signed_up is signed_up::date
+}

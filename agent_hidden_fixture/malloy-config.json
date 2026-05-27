@@ -1,0 +1,9 @@
+{
+    "connections": {
+        "duckdb": {
+            "is": "duckdb",
+            "workingDirectory": "agent_hidden_fixture",
+            "securityPolicy": "none"
+        }
+    }
+}
