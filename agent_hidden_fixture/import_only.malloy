@@ -7,4 +7,4 @@
 // package page.
 
 import "orders.malloy"
-import "custome.malloy"
+import "customers.malloy"
