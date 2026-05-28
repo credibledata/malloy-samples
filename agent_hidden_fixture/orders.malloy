@@ -1,0 +1,21 @@
+// orders.malloy
+//
+// Visible source that joins the hidden `products` lookup. This is the model
+// the package-page tooltip on products.malloy will point the user to.
+
+import "products.malloy"
+
+#(doc) Order line items, joined with the (hidden) product catalog.
+source: orders is duckdb.table('data/orders.csv') extend {
+  primary_key: order_id
+
+  join_one: products with product_id
+
+  dimension:
+    order_date is order_date::date
+    quantity is quantity
+
+  measure:
+    order_count is count()
+    total_revenue is sum(quantity * products.unit_price)
+}

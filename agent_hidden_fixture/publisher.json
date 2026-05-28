@@ -1,0 +1,5 @@
+{
+    "name": "agent_hidden_fixture",
+    "version": "0.1.0",
+    "description": "Fixture package exercising #(agent-hidden) source visibility. Used by Playwright e2e tests to verify the workspace and package pages filter / disable models whose sources are all agent-hidden."
+}

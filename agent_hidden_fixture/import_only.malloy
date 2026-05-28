@@ -1,0 +1,10 @@
+// import_only.malloy
+//
+// Pure-import file: no source declarations of its own. The indexer writes
+// zero entity rows under this URI, so the metadata endpoint returns no
+// entry for it — the UI's "no-sources" status applies. Expected behavior:
+// hidden in workspace, disabled with a "no usable sources" tooltip on the
+// package page.
+
+import "orders.malloy"
+import "custome.malloy"

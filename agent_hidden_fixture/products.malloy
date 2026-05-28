@@ -1,0 +1,17 @@
+// products.malloy
+//
+// Fully agent-hidden lookup table. The package page should still LIST this
+// model, but the row must be greyed-out, non-clickable, and show a tooltip
+// pointing the user at `orders.malloy` (where products is joined in). The
+// workspace page must NOT show this model at all.
+
+#(agent-hidden)
+#(doc) Product catalog. Hidden from the agent because it's only meaningful joined into orders.
+source: products is duckdb.table('data/products.csv') extend {
+  primary_key: product_id
+
+  dimension:
+    name is name
+    category is category
+    unit_price is unit_price
+}
