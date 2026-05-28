@@ -6,9 +6,4 @@
 #(doc) Customer dimension with region and signup date.
 source: customers is duckdb.table('data/customers.csv') extend {
   primary_key: customer_id
-
-  dimension:
-    name is name
-    region is region
-    signed_up is signed_up::date
 }
