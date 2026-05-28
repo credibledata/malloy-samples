@@ -2,7 +2,6 @@
 //
 // Visible source that joins the hidden `products` lookup. This is the model
 // the package-page tooltip on products.malloy will point the user to.
-##! m4warnings
 
 import "products.malloy"
 

@@ -4,7 +4,6 @@
 // model, but the row must be greyed-out, non-clickable, and show a tooltip
 // pointing the user at `orders.malloy` (where products is joined in). The
 // workspace page must NOT show this model at all.
-##! m4warnings
 
 #(agent-hidden)
 #(doc) Product catalog. Hidden from the agent because it's only meaningful joined into orders.

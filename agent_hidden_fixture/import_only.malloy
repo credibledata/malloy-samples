@@ -5,7 +5,6 @@
 // entry for it — the UI's "no-sources" status applies. Expected behavior:
 // hidden in workspace, disabled with a "no usable sources" tooltip on the
 // package page.
-##! m4warnings
 
 import "orders.malloy"
 import "custome.malloy"
