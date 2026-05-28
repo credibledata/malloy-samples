@@ -1,0 +1,5 @@
+{
+    "name": "faa-givens-demo",
+    "version": "1.0.0",
+    "description": "Customer-facing demo of Malloy `given:` runtime parameters, using FAA flights data. Pairs with the publisher givens documentation at docs/givens.md."
+}

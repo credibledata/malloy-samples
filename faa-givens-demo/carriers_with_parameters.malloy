@@ -1,0 +1,40 @@
+##! experimental.givens
+
+// Customer-facing demo of Malloy `given:` runtime parameters.
+// See ../../docs/givens.md for the full reference.
+//
+// Requires the `carriers.parquet` and `flights.parquet` files from
+// the FAA sample data, available at:
+//   https://github.com/credibledata/malloy-samples/tree/main/faa/data
+
+#(description="Two-letter IATA carrier code to spotlight (e.g. WN, AA, DL)")
+given: carrier :: string is 'WN'
+
+#(description="Earliest departure date to include")
+given: after :: timestamp is @2003-01-01 00:00:00
+
+source: spotlight_flights is duckdb.table('data/flights.parquet') extend {
+  primary_key: id2
+  join_one: carriers is duckdb.table('data/carriers.parquet')
+    on carrier = carriers.code
+
+  measure:
+    flight_count is count()
+    total_distance is sum(distance)
+
+  view: by_destination is {
+    where: carrier = $carrier and dep_time >= $after
+    group_by: destination
+    aggregate: flight_count, total_distance
+    order_by: flight_count desc
+    limit: 10
+  }
+
+  view: carrier_overview is {
+    where: carrier = $carrier and dep_time >= $after
+    aggregate:
+      flight_count
+      total_distance
+    group_by: carriers.name, carriers.nickname
+  }
+}
