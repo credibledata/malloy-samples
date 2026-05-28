@@ -11,7 +11,9 @@ source: orders is duckdb.table('data/orders.csv') extend {
 
   join_one: products with product_id
 
+  dimension: rev_per_product is quantity * products.unit_price
+
   measure:
     order_count is count()
-    total_revenue is source.sum(quantity * products.unit_price)
+    total_revenue is rev_per_product.sum()
 }
