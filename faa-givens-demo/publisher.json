@@ -1,5 +1,5 @@
 {
     "name": "faa-givens-demo",
-    "version": "1.0.0",
-    "description": "Customer-facing demo of Malloy `given:` runtime parameters, using FAA flights data. Pairs with the publisher givens documentation at docs/givens.md."
+    "version": "1.1.0",
+    "description": "Customer-facing demo of Malloy `given:` runtime parameters, using FAA flights data. Includes a #(secure) given row-level-ACL example (secure_carriers.malloy). Pairs with the publisher givens documentation at docs/givens.md."
 }
