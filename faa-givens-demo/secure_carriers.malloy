@@ -1,0 +1,33 @@
+##! experimental.givens
+
+// Row-level ACL example built on a #(secure) set-valued given.
+//
+// `allowed_carriers` is marked #(secure): on publish + index its name
+// auto-registers as a trusted attribute, and the router injects the caller's
+// assigned values (configured per user/group in Access Control) while stripping
+// any caller-supplied value. The source filters on it, so every query is gated —
+// a caller with no assigned value resolves to the empty set and sees zero rows
+// (fail-closed). See ../../docs/givens.md and the Access Control admin UI.
+//
+// Uses the same FAA parquet data as carriers_with_parameters.malloy.
+
+#(secure)
+given: allowed_carriers :: string[]
+
+source: secured_flights is duckdb.table('data/flights.parquet') extend {
+  join_one: carriers is duckdb.table('data/carriers.parquet')
+    on carrier = carriers.code
+
+  // The access boundary: only rows whose carrier is in the caller's assigned set.
+  where: carrier in $allowed_carriers
+
+  measure:
+    flight_count is count()
+    total_distance is sum(distance)
+
+  view: by_carrier is {
+    group_by: carriers.name, carriers.nickname
+    aggregate: flight_count, total_distance
+    order_by: flight_count desc
+  }
+}
