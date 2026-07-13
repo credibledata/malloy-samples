@@ -1,7 +1,9 @@
 ##! experimental.access_modifiers
 
+#(doc) Airline carriers such as Southwest or United. One row per carrier. Use to look up carrier names and codes and to count carriers.
 source: carriers is duckdb.table('data/carriers.parquet')
 include {
+  #(doc) Two-letter carrier code (e.g. "WN", "UA", "AA").
   public: code
 
   #(doc) Carrier full name (e.g. "Southwest Airlines").
@@ -14,49 +16,192 @@ include {
 }
 extend {
   primary_key: code
+
+  #(doc) Number of distinct carriers.
   measure: carrier_count is count()
 }
 
-source: airports is duckdb.table('data/airports.parquet') extend {
+#(doc) US airports keyed by FAA code. Joined to flights as origin and destination. Use for airport names, cities, states, and locations.
+source: airports is duckdb.table('data/airports.parquet')
+include {
+  *
+
+  public:
+    #(doc) FAA airport code (e.g. "ATL", "LAX"). Matches a flight's origin or destination.
+    code
+
+    #(doc) Full official airport name (e.g. "LOS ANGELES INTL").
+    full_name
+
+    #(doc) City the airport serves.
+    city
+
+    #(doc) Two-letter US state or territory code (e.g. "CA", "TX").
+    state
+
+    #(doc) County where the airport is located.
+    county
+
+    #(doc) FAA region code (e.g. "ASO" Southern, "AWP" Western-Pacific).
+    faa_region
+
+    #(doc) Field elevation above sea level, in feet.
+    elevation
+
+    #(doc) Latitude of the airport, in decimal degrees.
+    latitude
+
+    #(doc) Longitude of the airport, in decimal degrees.
+    longitude
+}
+extend {
   primary_key: code
-  measure: airport_count is count()
+
+  #(doc) Airport label combining code and full name (e.g. "LAX-LOS ANGELES INTL").
   dimension: name is concat(code, '-', full_name )
+
+  #(doc) Number of airports.
+  measure: airport_count is count()
 }
 
-source: aircraft_models is duckdb.table('data/aircraft_models.parquet') extend {
+#(doc) Aircraft model reference data: manufacturer, model, and seat count. One row per model. Use to analyze flights by manufacturer or plane size.
+source: aircraft_models is duckdb.table('data/aircraft_models.parquet')
+include {
+  *
+
+  public:
+    #(doc) Aircraft model code identifying the make and model.
+    aircraft_model_code
+
+    #(doc) Aircraft manufacturer (e.g. "BOEING", "AIRBUS").
+    manufacturer
+
+    #(doc) Number of seats on this aircraft model.
+    seats
+}
+extend {
   primary_key: aircraft_model_code
+
+  #(doc) Number of distinct aircraft models.
   measure: aircraft_model_count is count()
 }
 
-source: aircraft is duckdb.table('data/aircraft.parquet') extend {
+#(doc) Individual aircraft identified by tail number. One row per airframe. Joined to flights via tail number to reach the aircraft model and manufacturer.
+source: aircraft is duckdb.table('data/aircraft.parquet')
+include {
+  *
+
+  public:
+    #(doc) Aircraft registration / tail number (e.g. "N806MD").
+    tail_num
+
+    #(doc) Aircraft model code; joins to aircraft_models.
+    aircraft_model_code
+}
+extend {
   primary_key: tail_num
+
+  #(doc) Number of distinct aircraft (airframes).
   measure: aircraft_count is count()
+
   join_one: aircraft_models with aircraft_model_code
 }
 
-source: flights is duckdb.table('data/flights.parquet') extend {
+#(doc) Raw flight records, one row per flight.
+source: flights_base is duckdb.table('data/flights.parquet')
+include {
+  *
+
+  public:
+    #(doc) Unique flight identifier.
+    id2
+
+    #(doc) Two-letter operating carrier code (e.g. "WN", "UA"). Joins to carriers.
+    carrier
+
+    #(doc) Flight number as published in the schedule.
+    flight_num
+
+    #(doc) Aircraft registration / tail number. Joins to aircraft.
+    tail_num
+
+    #(doc) Origin airport FAA code. Joins to the origin airport.
+    origin
+
+    #(doc) Destination airport FAA code. Joins to the destination airport.
+    destination
+
+    #(doc) Gate departure timestamp.
+    dep_time
+
+    #(doc) Gate arrival timestamp.
+    arr_time
+
+    #(doc) Time in the air, wheels-up to wheels-down, in minutes.
+    flight_time
+
+    #(doc) Departure delay in minutes; negative means the flight left early.
+    dep_delay
+
+    #(doc) Arrival delay in minutes; negative means the flight arrived early.
+    arr_delay
+
+    #(doc) Taxi-out time from gate to takeoff, in minutes.
+    taxi_out
+
+    #(doc) Taxi-in time from landing to gate, in minutes.
+    taxi_in
+
+    #(doc) Flight distance, in miles.
+    distance
+
+    #(doc) Whether the flight was cancelled: Y or N.
+    cancelled
+
+    #(doc) Whether the flight was diverted: Y or N.
+    diverted
+}
+
+#(doc) Flight-level analysis: on-time performance, distances, routes, carriers, and aircraft. One row per flight, with joins to carrier, origin/destination airports, and aircraft.
+source: flights is flights_base extend {
   primary_key: id2
 
   // rename some fields as from their physical names
   rename: origin_code is origin
   rename: destination_code is destination
 
+  #(doc) Operating carrier for the flight.
   join_one: carriers with carrier
+
+  #(doc) Airport the flight departed from.
   join_one: origin is airports with origin_code
+
+  #(doc) Airport the flight arrived at.
   join_one: destination is airports with destination_code
+
+  #(doc) Aircraft (airframe) that flew the flight.
   join_one: aircraft with tail_num
 
   measure:
+    #(doc) Number of flights.
     flight_count is count()
+    #(doc) Total distance flown across all flights, in miles.
     total_distance is sum(distance)
+    #(doc) Number of distinct destination airports.
     destination_count is destination.airport_count
+    #(doc) Number of distinct origin airports.
     origin_count is origin.count()
 
+    #(doc) Total seats offered across all flights (plane size summed per flight).
     seats_for_sale is source.sum(aircraft.aircraft_models.seats)
+    #(doc) Total seats across the distinct aircraft flown.
     seats_owned is aircraft.sum(aircraft.aircraft_models.seats)
+    #(doc) Average number of seats per aircraft flown.
     average_plane_size is aircraft.avg(aircraft.aircraft_models.seats)
+    #(doc) Average flight distance, in miles.
     average_flight_distance is distance.avg()
 
+  #(doc) Carriers ranked by number of flights, with destinations reached and share of all flights.
   view: top_carriers is {
     group_by: carriers.nickname
     aggregate:
@@ -66,6 +211,7 @@ source: flights is duckdb.table('data/flights.parquet') extend {
   }
 
   # line_chart
+  #(doc) Monthly flight counts per carrier over time.
   view: carriers_over_time is {
     group_by: dep_month is dep_time.month
     aggregate: flight_count
@@ -73,6 +219,7 @@ source: flights is duckdb.table('data/flights.parquet') extend {
     limit: 10000
   }
 
+  #(doc) Busiest origin airports by number of departing flights.
   view: top_origins is {
     top: 5
     group_by: origin.name
@@ -83,6 +230,7 @@ source: flights is duckdb.table('data/flights.parquet') extend {
       percent_of_flights is flight_count/all(flight_count) *100
   }
 
+  #(doc) Busiest destination airports by number of arriving flights.
   view: top_destinations is {
       top: 5
       group_by: destination.code, destination.full_name
@@ -93,11 +241,13 @@ source: flights is duckdb.table('data/flights.parquet') extend {
     }
 
   # line_chart
+  #(doc) Monthly flight counts over time.
   view: by_month is {
     group_by: dep_month is dep_time.month
     aggregate: flight_count
   }
 
+  #(doc) Flights grouped by aircraft manufacturer (top 3).
   view: by_manufacturer is {
       group_by: aircraft.aircraft_models.manufacturer
       aggregate: flight_count, aircraft.aircraft_count
@@ -105,6 +255,7 @@ source: flights is duckdb.table('data/flights.parquet') extend {
     }
 
   # segment_map
+  #(doc) Busiest routes drawn as origin-to-destination segments on a map.
   view: top_routes_map is {
     group_by:
       origin.latitude
@@ -117,6 +268,7 @@ source: flights is duckdb.table('data/flights.parquet') extend {
   -> {select: latitude,longitude,latitude2,longitude2}
 
   # dashboard
+  #(doc) Overview dashboard: totals with nested manufacturer, monthly, hub, and origin breakdowns.
   view: carrier_dashboard is {
     aggregate: destination_count
     aggregate: flight_count

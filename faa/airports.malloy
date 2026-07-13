@@ -1,20 +1,73 @@
-source: airports is duckdb.table('data/airports.parquet') extend {
-  rename: facility_type is fac_type
+##! experimental.access_modifiers
 
+#(doc) US aviation facilities from the FAA: airports, heliports, seaplane bases, and other landing sites. One row per facility. Use for questions about where facilities are located, how many exist, and their type, ownership, or elevation.
+source: airports is duckdb.table('data/airports.parquet') include {
+  *
+
+  internal: fac_type
+
+  public:
+    #(doc) FAA location identifier for the facility (e.g. "ATL", "LAX", "JFK").
+    code
+
+    #(doc) Full official facility name (e.g. "THE WILLIAM B HARTSFIELD ATLANTA INTL").
+    full_name
+
+    #(doc) City the facility serves.
+    city
+
+    #(doc) Two-letter US state or territory code (e.g. "CA", "TX", "PR").
+    state
+
+    #(doc) County where the facility is located.
+    county
+
+    #(doc) FAA region code (e.g. "ASO" Southern, "AWP" Western-Pacific, "AGL" Great Lakes).
+    faa_region
+
+    #(doc) Field elevation above sea level, in feet.
+    elevation
+
+    #(doc) Latitude of the facility, in decimal degrees.
+    latitude
+
+    #(doc) Longitude of the facility, in decimal degrees.
+    longitude
+
+    #(doc) Ownership category: PU (public), PR (private), MA (Air Force), MN (Navy), MR (Army).
+    own_type
+
+    #(doc) Facility use: PU (open to the public) or PR (private use).
+    fac_use
+
+    #(doc) Whether the facility has an air traffic control tower: Y or N.
+    cntl_twr
+
+    #(doc) Whether the facility is a major airport: Y or N.
+    major
+}
+extend {
+  #(doc) Kind of facility: AIRPORT, HELIPORT, SEAPLANE BASE, ULTRALIGHT, STOLPORT, GLIDERPORT, or BALLOONPORT.
+  dimension: facility_type is fac_type
+
+  #(doc) Number of facilities (row count of the airports table).
   measure: airport_count is count()
 
+  #(doc) Facility counts grouped by US state.
   view: by_state is {
     where: state != null
     group_by: state
     aggregate: airport_count
   }
 
+  #(doc) Facility counts grouped by facility type (airport, heliport, seaplane base, etc.).
   view: by_facility_type is {
     group_by: facility_type
     aggregate:
       airport_count
   }
 
+  #(doc) Facilities broken down by FAA region, with nested state and facility-type breakdowns.
   view: airports_by_region_dashboard is {
     group_by: faa_region
     aggregate: airport_count
