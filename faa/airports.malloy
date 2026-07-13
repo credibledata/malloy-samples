@@ -1,20 +1,110 @@
-source: airports is duckdb.table('data/airports.parquet') extend {
-  rename: facility_type is fac_type
+##! experimental.access_modifiers
 
+#(doc) US aviation facilities from the FAA: airports, heliports, seaplane bases, and other landing sites. One row per facility. Use for questions about where facilities are located, how many exist, and their type, ownership, or elevation.
+source: airports is duckdb.table('data/airports.parquet') include {
+  internal: fac_type
+
+  public:
+    #(doc) FAA location identifier for the facility (e.g. "ATL", "LAX", "JFK").
+    code
+
+    #(doc) Full official facility name (e.g. "THE WILLIAM B HARTSFIELD ATLANTA INTL").
+    full_name
+
+    #(doc) City the facility serves.
+    city
+
+    #(doc) Two-letter US state or territory code (e.g. "CA", "TX", "PR").
+    state
+
+    #(doc) County where the facility is located.
+    county
+
+    #(doc) FAA region code (e.g. "ASO" Southern, "AWP" Western-Pacific, "AGL" Great Lakes).
+    faa_region
+
+    #(doc) FAA district or field office code responsible for the facility.
+    faa_dist
+
+    #(doc) Field elevation above sea level, in feet.
+    elevation
+
+    #(doc) Latitude of the facility, in decimal degrees.
+    latitude
+
+    #(doc) Longitude of the facility, in decimal degrees.
+    longitude
+
+    #(doc) Ownership category: PU (public), PR (private), MA (Air Force), MN (Navy), MR (Army).
+    own_type
+
+    #(doc) Facility use: PU (open to the public) or PR (private use).
+    fac_use
+
+    #(doc) Whether the facility has an air traffic control tower: Y or N.
+    cntl_twr
+
+    #(doc) Whether the facility is a major airport: Y or N.
+    major
+
+    #(doc) Date the facility was activated, as month/year (e.g. "06/1983").
+    act_date
+
+    #(doc) Name of the aeronautical (sectional) chart the facility appears on.
+    aero_cht
+
+    #(doc) Distance from the city's central business district, in nautical miles.
+    cbd_dist
+
+    #(doc) Compass direction of the facility from the city's central business district (e.g. "N", "SW").
+    cbd_dir
+
+    #(doc) Airport operating certification class under FAR Part 139; empty if not certified.
+    cert
+
+    #(doc) Codes for the facility's federal agreements or grant obligations.
+    fed_agree
+
+    #(doc) Whether the facility is an international airport of entry for customs: Y or N.
+    cust_intl
+
+    #(doc) Whether the facility has customs landing rights: Y or N.
+    c_ldg_rts
+
+    #(doc) Whether the facility has joint civil/military use: Y or N.
+    joint_use
+
+    #(doc) Whether the facility has military landing rights: Y or N.
+    mil_rts
+
+    #(doc) FAA site number uniquely identifying the facility in the airport master record.
+    site_number
+
+    #(doc) Internal numeric identifier for the facility record.
+    id
+}
+extend {
+  #(doc) Kind of facility: AIRPORT, HELIPORT, SEAPLANE BASE, ULTRALIGHT, STOLPORT, GLIDERPORT, or BALLOONPORT.
+  dimension: facility_type is fac_type
+
+  #(doc) Number of facilities (row count of the airports table).
   measure: airport_count is count()
 
+  #(doc) Facility counts grouped by US state.
   view: by_state is {
     where: state != null
     group_by: state
     aggregate: airport_count
   }
 
+  #(doc) Facility counts grouped by facility type (airport, heliport, seaplane base, etc.).
   view: by_facility_type is {
     group_by: facility_type
     aggregate:
       airport_count
   }
 
+  #(doc) Facilities broken down by FAA region, with nested state and facility-type breakdowns.
   view: airports_by_region_dashboard is {
     group_by: faa_region
     aggregate: airport_count
