@@ -24,8 +24,6 @@ extend {
 #(doc) US airports keyed by FAA code. Joined to flights as origin and destination. Use for airport names, cities, states, and locations.
 source: airports is duckdb.table('data/airports.parquet')
 include {
-  *
-
   public:
     #(doc) FAA airport code (e.g. "ATL", "LAX"). Matches a flight's origin or destination.
     code
@@ -45,6 +43,9 @@ include {
     #(doc) FAA region code (e.g. "ASO" Southern, "AWP" Western-Pacific).
     faa_region
 
+    #(doc) FAA district or field office code responsible for the airport.
+    faa_dist
+
     #(doc) Field elevation above sea level, in feet.
     elevation
 
@@ -53,6 +54,57 @@ include {
 
     #(doc) Longitude of the airport, in decimal degrees.
     longitude
+
+    #(doc) Kind of facility: AIRPORT, HELIPORT, SEAPLANE BASE, ULTRALIGHT, STOLPORT, GLIDERPORT, or BALLOONPORT.
+    fac_type
+
+    #(doc) Facility use: PU (open to the public) or PR (private use).
+    fac_use
+
+    #(doc) Ownership category: PU (public), PR (private), MA (Air Force), MN (Navy), MR (Army).
+    own_type
+
+    #(doc) Whether the airport has an air traffic control tower: Y or N.
+    cntl_twr
+
+    #(doc) Whether the airport is a major airport: Y or N.
+    major
+
+    #(doc) Date the airport was activated, as month/year (e.g. "06/1983").
+    act_date
+
+    #(doc) Name of the aeronautical (sectional) chart the airport appears on.
+    aero_cht
+
+    #(doc) Distance from the city's central business district, in nautical miles.
+    cbd_dist
+
+    #(doc) Compass direction of the airport from the city's central business district (e.g. "N", "SW").
+    cbd_dir
+
+    #(doc) Airport operating certification class under FAR Part 139; empty if not certified.
+    cert
+
+    #(doc) Codes for the airport's federal agreements or grant obligations.
+    fed_agree
+
+    #(doc) Whether the airport is an international airport of entry for customs: Y or N.
+    cust_intl
+
+    #(doc) Whether the airport has customs landing rights: Y or N.
+    c_ldg_rts
+
+    #(doc) Whether the airport has joint civil/military use: Y or N.
+    joint_use
+
+    #(doc) Whether the airport has military landing rights: Y or N.
+    mil_rts
+
+    #(doc) FAA site number uniquely identifying the airport in the airport master record.
+    site_number
+
+    #(doc) Internal numeric identifier for the airport record.
+    id
 }
 extend {
   primary_key: code
@@ -67,8 +119,6 @@ extend {
 #(doc) Aircraft model reference data: manufacturer, model, and seat count. One row per model. Use to analyze flights by manufacturer or plane size.
 source: aircraft_models is duckdb.table('data/aircraft_models.parquet')
 include {
-  *
-
   public:
     #(doc) Aircraft model code identifying the make and model.
     aircraft_model_code
@@ -76,8 +126,32 @@ include {
     #(doc) Aircraft manufacturer (e.g. "BOEING", "AIRBUS").
     manufacturer
 
+    #(doc) Manufacturer's model name or designation.
+    model
+
     #(doc) Number of seats on this aircraft model.
     seats
+
+    #(doc) Number of engines on this aircraft model.
+    engines
+
+    #(doc) Cruising speed of the aircraft model, in miles per hour (0 if unknown).
+    speed
+
+    #(doc) Aircraft weight class code (0 if unknown).
+    weight
+
+    #(doc) Numeric code for the aircraft category (e.g. landplane, seaplane).
+    aircraft_category_id
+
+    #(doc) Numeric code for the aircraft type (e.g. fixed-wing single-engine, rotorcraft).
+    aircraft_type_id
+
+    #(doc) Numeric code for the engine type (e.g. reciprocating, turboprop, turbojet).
+    aircraft_engine_type_id
+
+    #(doc) Whether the model is amateur-built: 1 if yes, 0 if no.
+    amateur
 }
 extend {
   primary_key: aircraft_model_code
@@ -89,14 +163,81 @@ extend {
 #(doc) Individual aircraft identified by tail number. One row per airframe. Joined to flights via tail number to reach the aircraft model and manufacturer.
 source: aircraft is duckdb.table('data/aircraft.parquet')
 include {
-  *
-
   public:
     #(doc) Aircraft registration / tail number (e.g. "N806MD").
     tail_num
 
     #(doc) Aircraft model code; joins to aircraft_models.
     aircraft_model_code
+
+    #(doc) Manufacturer's serial number for the airframe.
+    aircraft_serial
+
+    #(doc) Code identifying the aircraft's engine model.
+    aircraft_engine_code
+
+    #(doc) Numeric code for the aircraft type (e.g. fixed-wing single-engine, rotorcraft).
+    aircraft_type_id
+
+    #(doc) Numeric code for the engine type (e.g. reciprocating, turboprop, turbojet).
+    aircraft_engine_type_id
+
+    #(doc) Year the aircraft was manufactured.
+    year_built
+
+    #(doc) Mode S transponder code assigned to the aircraft.
+    mode_s_code
+
+    #(doc) Airworthiness certification category codes for the aircraft.
+    certification
+
+    #(doc) Date the aircraft's airworthiness certificate was issued.
+    air_worth_date
+
+    #(doc) Date the aircraft's registration certificate was issued.
+    cert_issue_date
+
+    #(doc) Date of the most recent registration action.
+    last_action_date
+
+    #(doc) Aircraft registration status code.
+    status_code
+
+    #(doc) Numeric code for the type of registrant (e.g. individual, corporation).
+    registrant_type_id
+
+    #(doc) Registered owner's name.
+    name
+
+    #(doc) Registered owner's street address, line 1.
+    address1
+
+    #(doc) Registered owner's street address, line 2.
+    address2
+
+    #(doc) City of the registered owner.
+    city
+
+    #(doc) State of the registered owner (two-letter code).
+    state
+
+    #(doc) County code of the registered owner.
+    county
+
+    #(doc) Country of the registered owner.
+    country
+
+    #(doc) ZIP / postal code of the registered owner.
+    zip
+
+    #(doc) FAA region code of the registered owner.
+    region
+
+    #(doc) Whether the aircraft is under fractional ownership.
+    fract_owner
+
+    #(doc) Internal numeric identifier for the aircraft record.
+    id
 }
 extend {
   primary_key: tail_num
@@ -110,8 +251,6 @@ extend {
 #(doc) Raw flight records, one row per flight.
 source: flights_base is duckdb.table('data/flights.parquet')
 include {
-  *
-
   public:
     #(doc) Unique flight identifier.
     id2
@@ -166,7 +305,7 @@ include {
 source: flights is flights_base extend {
   primary_key: id2
 
-  // rename some fields as from their physical names
+  // rename some fields as from their physical names (doc strings are inherited from flights_base)
   rename: origin_code is origin
   rename: destination_code is destination
 

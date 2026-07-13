@@ -2,8 +2,6 @@
 
 #(doc) US aviation facilities from the FAA: airports, heliports, seaplane bases, and other landing sites. One row per facility. Use for questions about where facilities are located, how many exist, and their type, ownership, or elevation.
 source: airports is duckdb.table('data/airports.parquet') include {
-  *
-
   internal: fac_type
 
   public:
@@ -25,6 +23,9 @@ source: airports is duckdb.table('data/airports.parquet') include {
     #(doc) FAA region code (e.g. "ASO" Southern, "AWP" Western-Pacific, "AGL" Great Lakes).
     faa_region
 
+    #(doc) FAA district or field office code responsible for the facility.
+    faa_dist
+
     #(doc) Field elevation above sea level, in feet.
     elevation
 
@@ -45,6 +46,42 @@ source: airports is duckdb.table('data/airports.parquet') include {
 
     #(doc) Whether the facility is a major airport: Y or N.
     major
+
+    #(doc) Date the facility was activated, as month/year (e.g. "06/1983").
+    act_date
+
+    #(doc) Name of the aeronautical (sectional) chart the facility appears on.
+    aero_cht
+
+    #(doc) Distance from the city's central business district, in nautical miles.
+    cbd_dist
+
+    #(doc) Compass direction of the facility from the city's central business district (e.g. "N", "SW").
+    cbd_dir
+
+    #(doc) Airport operating certification class under FAR Part 139; empty if not certified.
+    cert
+
+    #(doc) Codes for the facility's federal agreements or grant obligations.
+    fed_agree
+
+    #(doc) Whether the facility is an international airport of entry for customs: Y or N.
+    cust_intl
+
+    #(doc) Whether the facility has customs landing rights: Y or N.
+    c_ldg_rts
+
+    #(doc) Whether the facility has joint civil/military use: Y or N.
+    joint_use
+
+    #(doc) Whether the facility has military landing rights: Y or N.
+    mil_rts
+
+    #(doc) FAA site number uniquely identifying the facility in the airport master record.
+    site_number
+
+    #(doc) Internal numeric identifier for the facility record.
+    id
 }
 extend {
   #(doc) Kind of facility: AIRPORT, HELIPORT, SEAPLANE BASE, ULTRALIGHT, STOLPORT, GLIDERPORT, or BALLOONPORT.
