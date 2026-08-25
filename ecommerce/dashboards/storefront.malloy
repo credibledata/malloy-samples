@@ -1,0 +1,120 @@
+// A laid-out dashboard over the ecommerce order lines.
+//
+// Layout is one 12-column grid: every card and tile carries a colspan and each
+// row sums to 12, so nothing flows to a ragged width. `# break` starts the row
+// after the KPI cards; the rows below it already fill, so they need none.
+//
+// Additive by design. This file extends `order_items` locally rather than
+// editing ecommerce.malloy, so the package's existing models and notebooks are
+// untouched, and it declares no `given:` — every tag below is an annotation an
+// older compiler ignores, whereas `given:` is syntax that would fail to parse
+// and take the whole package down with it (see faa-givens-demo, which is a
+// separate package for exactly that reason).
+import { order_items } from '../ecommerce.malloy'
+
+source: storefront is order_items extend {
+  dimension:
+    category is inventory_items.product_category
+    brand is inventory_items.product_brand
+    product is inventory_items.product_name
+    state is users.state
+    country is users.country
+
+  measure:
+    # percent
+    margin_rate is total_gross_margin / nullif(total_sales, 0)
+}
+
+#" Revenue, margin and demand across the storefront.
+# artifact { title="Storefront Overview" }
+# dashboard { columns=12 }
+query: storefront_overview is storefront -> {
+  where: status != 'Cancelled'
+
+  aggregate:
+    # colspan=3
+    # label="Revenue"
+    # currency=usd0
+    total_sales
+    # colspan=3
+    # label="Orders"
+    order_count
+    # colspan=3
+    # label="Gross margin"
+    # currency=usd0
+    total_gross_margin
+    # colspan=3
+    # label="Margin rate"
+    margin_rate
+
+  nest:
+    // The data stops mid-November 2022, and a partial month plotted beside full
+    // ones reads as a collapse in demand. Chart whole months only.
+    # break
+    # line_chart
+    # colspan=8
+    # label="Revenue by month"
+    revenue_trend is {
+      where: created_at < @2022-11-01
+      group_by: order_month is created_at.month
+      # currency=usd0
+      aggregate: revenue is total_sales
+    }
+
+    # bar_chart
+    # colspan=4
+    # label="Top categories"
+    top_categories is {
+      top: 8
+      group_by: category
+      # currency=usd0
+      aggregate: revenue is total_sales
+    }
+
+    // shape_map draws US states only and the customer base spans two countries,
+    // so the tile filters rather than dropping the rest into a map that cannot
+    // show them. The legend takes the field's name, not its `# label`, which is
+    // why the measure is renamed to `revenue` here.
+    # shape_map
+    # colspan=6
+    # label="Revenue by state"
+    revenue_by_state is {
+      where: country = 'USA'
+      group_by: state
+      # currency=usd0
+      aggregate: revenue is total_sales
+    }
+
+    # bar_chart
+    # colspan=6
+    # label="Top brands"
+    top_brands is {
+      top: 10
+      group_by: brand
+      # currency=usd0
+      aggregate: revenue is total_sales
+    }
+
+    # colspan=12
+    # label="Best sellers"
+    best_sellers is {
+      top: 10
+      group_by:
+        # label="Product"
+        product
+        # label="Brand"
+        brand
+        # label="Category"
+        category
+      aggregate:
+        # label="Revenue"
+        # currency=usd0
+        total_sales
+        # label="Items"
+        order_item_count
+        # label="Margin"
+        # currency=usd0
+        total_gross_margin
+      order_by: total_sales desc
+    }
+}
