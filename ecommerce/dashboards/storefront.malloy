@@ -29,7 +29,11 @@ source: storefront is order_items extend {
 # artifact { title="Storefront Overview" }
 # dashboard { columns=12 }
 query: storefront_overview is storefront -> {
-  where: status != 'Cancelled'
+  // Matches how this package already defines revenue — `user_order_facts`
+  // computes lifetime_spend as `status != 'Cancelled' | 'Returned'`. Counting
+  // returned merchandise as revenue would also book its margin as profit, and
+  // would leave the sample shipping two different meanings of "revenue".
+  where: status != 'Cancelled' | 'Returned'
 
   aggregate:
     # colspan=3
@@ -49,11 +53,13 @@ query: storefront_overview is storefront -> {
 
   nest:
     // The data stops mid-November 2022, and a partial month plotted beside full
-    // ones reads as a collapse in demand. Chart whole months only.
+    // ones reads as a collapse in demand. Chart whole months only — and say so
+    // in the label, because it means these bars deliberately sum to slightly
+    // less than the Revenue card above them.
     # break
     # line_chart
     # colspan=8
-    # label="Revenue by month"
+    # label="Revenue by month (through Oct 2022)"
     revenue_trend is {
       where: created_at < @2022-11-01
       group_by: order_month is created_at.month
@@ -73,11 +79,13 @@ query: storefront_overview is storefront -> {
 
     // shape_map draws US states only and the customer base spans two countries,
     // so the tile filters rather than dropping the rest into a map that cannot
-    // show them. The legend takes the field's name, not its `# label`, which is
-    // why the measure is renamed to `revenue` here.
+    // show them. UK customers are a sixth of revenue, so the label has to say
+    // this is US-only or the map reads as a shortfall against the Revenue card.
+    // The legend takes the field's name, not its `# label`, which is why the
+    // measure is renamed to `revenue` here.
     # shape_map
     # colspan=6
-    # label="Revenue by state"
+    # label="Revenue by state (US only)"
     revenue_by_state is {
       where: country = 'USA'
       group_by: state
