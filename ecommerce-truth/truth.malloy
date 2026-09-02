@@ -1,0 +1,29 @@
+// Truth sources for the ecommerce golden set.
+//
+// Deliberately semantics-free: raw columns, no measures, no docs, no joins, no
+// filters. A truthQuery that reused ecommerce.malloy's `total_sales` would let a
+// bug in the semantic model certify its own golden, which is the one thing this
+// file exists to prevent.
+//
+// It lives in the package (rather than the query text) because the Publisher's
+// query endpoint rejects `duckdb.table(...)` in a restricted query. Inside a
+// model file the same reference is allowed, so goldens run through the
+// Publisher's API like everything else.
+//
+// Table paths resolve from the PACKAGE ROOT, so they are written
+// 'data/x.parquet'. A sibling-relative '../data/x.parquet' compiles and then
+// fails at read time. `data` here is a symlink to ../ecommerce/data: this
+// package is a second lens on the same 20MB, not a copy of it.
+//
+// This is a SEPARATE package from `ecommerce` on purpose. It used to live at
+// ecommerce/gold/truth.malloy, inside the tree the Publisher serves, where its
+// raw sources were indexed next to the semantic model and could come back from
+// get_context -- quietly changing what the model under test looked like.
+
+source: order_items is duckdb.table('data/order_items.parquet')
+
+source: users is duckdb.table('data/users.parquet')
+
+source: products is duckdb.table('data/products.parquet')
+
+source: inventory_items is duckdb.table('data/inventory_items.parquet')
