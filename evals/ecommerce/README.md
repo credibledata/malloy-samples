@@ -2,14 +2,17 @@
 
 An eval set anyone can run: 49 questions against the `ecommerce` package, each with the answer we
 are prepared to defend and the query that proves it. Use it to try the eval loop in
-[ms2data/agent-skills](https://github.com/ms2data/agent-skills) (`skills/eval-loop`) before pointing
-the loop at a model of your own.
+[malloydata/publisher](https://github.com/malloydata/publisher) (`skills/eval-loop`) before pointing
+the loop at a model of your own. **Run the loop from a Publisher checkout.** Publisher is the source
+of truth for these skills and `ms2data/agent-skills` mirrors them, so the mirror can be behind; the
+scripts are the harness, and a stale copy produces a ledger that reads as current and is not.
 
 ```
 set.json                 what this set is and is not good for; datasetVersion; the truth package
 cases.jsonl              49 cases, 35 dev / 14 holdout: question, golden, rubric, expected entities
 judge-regressions.jsonl  12 predictions pinned to human verdicts — the only check on the judge
-verify_goldens.py        pointer: the verifier lives in agent-skills and runs before every arm
+CALIBRATION.md           the noise band per configuration. Empty of bands: read it before quoting one
+verify_goldens.py        pointer: the verifier lives with the skills and runs before every arm
 ../../ecommerce-truth/   the truth package every golden is computed from
 ```
 
@@ -35,12 +38,12 @@ the model (see `ecommerce/ecommerce.malloy`'s history), not into a file beside t
 
 ## Running it
 
-You need a Publisher build (`packages/server/dist/server.mjs`), a checkout of `ms2data/agent-skills`,
-and the `claude` CLI logged in. Everything below is run from the agent-skills checkout;
-`<samples>` is this repository.
+You need a checkout of `malloydata/publisher` with a build (`packages/server/dist/server.mjs`) and
+the `claude` CLI logged in. Everything below is run from that checkout, whose `skills/` holds the
+loop; `<samples>` is this repository.
 
 ```bash
-S=<agent-skills>/skills
+S=<publisher>/skills
 
 # 1. Two servers, each in its own session so a closed shell cannot take it down.
 #    The answerer's serves ONLY the model under test; the truth server serves ONLY the truth.
@@ -64,7 +67,10 @@ python3 $S/eval-loop/scripts/run_baseline.py --set <samples>/evals/ecommerce \
   --out <samples>/evals/ecommerce/runs/baseline --label baseline --parallel 4 \
   --environment samples --package ecommerce \
   --mcp-url http://localhost:4040/mcp --publisher http://localhost:4811 \
-  --truth-publisher http://localhost:4812
+  --truth-publisher http://localhost:4812 \
+  --model-repo <samples>   # pins modelGitSha to THIS repo. Publisher answers
+                           # from a copy under publisher_data/, so the tree
+                           # around the served file is the server's storage.
 
 # 3. Diagnose what failed, then browse the run.
 python3 $S/eval-diagnose/scripts/diagnose.py --run <samples>/evals/ecommerce/runs/baseline \
@@ -75,9 +81,10 @@ python3 $S/eval-loop/scripts/build_run_package.py --run <samples>/evals/ecommerc
 #    serve runs/pkg-baseline with Publisher and open its public/index.html
 ```
 
-`skill:eval-loop` in agent-skills is the full procedure — noise band, A/B, the golden side door,
-what the improve step may and may not touch. Start there before reading a number off one run: a
-single arm's flip against another is inside judge noise about one case in twenty.
+`skill:eval-loop` is the full procedure — noise band, A/B, the golden side door, what the improve
+step may and may not touch. Start there before reading a number off one run. And read
+`CALIBRATION.md` first: this set has no measured band on the current configuration, so no run of it
+can be compared with another yet.
 
 ## What the set is designed to measure
 
