@@ -1,0 +1,615 @@
+#!/usr/bin/env python3
+"""Emit candidates-time.jsonl. One dict per case, written as one JSON line each."""
+import hashlib
+import json
+import pathlib
+
+SOURCE = {"kind": "authored", "from": "time-batch", "seed": "2026-08-30"}
+VERIFIED = "authored and re-derived against ecommerce-truth, 2026-08-30"
+
+CASES = [
+    # ---------------------------------------------------------------- window 1
+    {
+        "qid": "ecom_mom_largest_drop_2022",
+        "question": "Which month in 2022 had the biggest month-over-month drop in sales?",
+        "tags": ["time", "window-function", "truncated-window", "month-over-month"],
+        "requiresConcepts": ["month-over-month change", "order date", "data end date"],
+        "golden": {
+            "kind": "scalar",
+            "value": {
+                "drop_month": 2,
+                "month_sales": 379584.81,
+                "prev_month_sales": 402800.80,
+                "mom_change": -23215.99,
+                "mom_pct": -0.0576,
+                "currency": "usd",
+                "round": 4,
+            },
+            "rubric": (
+                "CORRECT: February 2022. Sales fell from 402800.80 in January to 379584.81, a drop of "
+                "23215.99 (-5.76%), the largest month-over-month decline among 2022's complete months. "
+                "Requires a window function: the answer is a per-row comparison to the preceding row "
+                "(lag() over months ordered ascending), not an aggregate. "
+                "WRONG ANSWER AND ITS NUMBER: November 2022, -298435.93 (-56.07%), from October's "
+                "532215.88 down to 233779.95. That is arithmetically what the data says and it is not a "
+                "business decline: created_at stops at 2022-11-14, so November holds 14 days of orders "
+                "against October's 31. Any agent that sorts month-over-month deltas ascending and takes "
+                "the first row lands here. "
+                "STRUCTURAL ERROR (accept: false): naming November as the month sales dropped, with no "
+                "mention of the 2022-11-14 cutoff. Wrong under every reading, because the comparison is "
+                "not between two like periods. "
+                "DEFINITIONAL DIVERGENCE (accept: true): reporting November's -56.07% as the largest raw "
+                "movement while explicitly naming the truncation and identifying February as the largest "
+                "genuine decline. The model documents no date-coverage note anywhere, so nothing warns the "
+                "agent that the last month is partial -- lever: source_doc. "
+                "Two forks that do NOT change the answer, so a differing answer cannot be excused by them: "
+                "measuring the drop in absolute dollars rather than percent still gives February "
+                "(-23215.99 is also the largest absolute fall among complete months), and admitting the "
+                "December-2021-to-January-2022 comparison gives January at -4.21%, which is smaller."
+            ),
+            "mustState": [
+                "The data ends 2022-11-14, so November 2022 is a partial month and its month-over-month fall is a coverage artifact.",
+            ],
+            "mustNotUse": ["November 2022 as the answer without naming the truncation"],
+            "clarifyOk": False,
+            "alternates": [
+                {
+                    "assumption": "November's -56.07% reported as the largest raw movement, with the 2022-11-14 cutoff named and February given as the largest genuine decline",
+                    "value": {"drop_month": 11, "mom_pct": -0.5607, "mom_change": -298435.93},
+                    "accept": True,
+                    "lever": "source_doc",
+                },
+                {
+                    "assumption": "November taken at face value as a real decline",
+                    "value": {"drop_month": 11, "mom_pct": -0.5607},
+                    "accept": False,
+                },
+            ],
+            "canonicalQuery": (
+                "run: duckdb.table('data/order_items.parquet') -> {\n"
+                "  where: created_at >= @2022-01-01\n"
+                "  group_by: mo is created_at.month\n"
+                "  aggregate: sales is sale_price.sum()\n"
+                "  order_by: mo\n"
+                "  calculate: prev_month_sales is lag(sales)\n"
+                "} -> {\n"
+                "  where: mo < @2022-11-01 and prev_month_sales != null\n"
+                "  select:\n"
+                "    drop_month is month(mo)\n"
+                "    month_sales is sales\n"
+                "    prev_month_sales\n"
+                "    mom_change is round(sales - prev_month_sales, 2)\n"
+                "    mom_pct is round(sales / prev_month_sales - 1, 4)\n"
+                "  order_by: mom_pct asc\n"
+                "  limit: 1\n"
+                "}"
+            ),
+        },
+    },
+    # ---------------------------------------------------------------- window 2
+    {
+        "qid": "ecom_cumulative_4m_crossing_2022",
+        "question": "Running our 2022 sales up month by month, which month did we first cross $4 million?",
+        "tags": ["time", "window-function", "running-total"],
+        "requiresConcepts": ["running total", "order date"],
+        "golden": {
+            "kind": "scalar",
+            "value": {
+                "crossing_month": 10,
+                "cume_at_crossing": 4510963.50,
+                "prev_month_cume": 3978747.61,
+                "short_of_4m_prior_month": 21252.39,
+                "currency": "usd",
+                "round": 2,
+            },
+            "rubric": (
+                "CORRECT: October 2022. Cumulative 2022 sales reach 4510963.50 at the end of October; "
+                "through September they stand at 3978747.61. Requires a window function: a running total "
+                "over months ordered ascending (sum_cumulative()), then the first month whose running "
+                "total clears 4000000. A month-by-month list of monthly totals does not answer the "
+                "question. "
+                "WRONG ANSWER AND ITS NUMBER: September 2022, at a cumulative 3978747.61. September is "
+                "21252.39 short of 4 million -- 0.53% -- so an agent that eyeballs the monthly column, "
+                "rounds to the nearest hundred thousand, or accumulates with an off-by-one that includes "
+                "the current month twice will call September the crossing month. The margin is the trap: "
+                "the correct answer is only one month away and one half of one percent away. "
+                "STRUCTURAL ERROR (accept: false): September, or any month reached by accumulating over "
+                "the whole file rather than 2022. All-time cumulative sales cross 4 million in January "
+                "2021 (cumulative 4196368.60), because 2019 plus 2020 alone total 3920638.61. The "
+                "question says 'our 2022 sales', so the year-to-date window is not optional. "
+                "DEFINITIONAL DIVERGENCE (accept: true): accumulating only non-cancelled sales, which is "
+                "a defensible reading of what counts as a sale. It still crosses in October, at a "
+                "cumulative 4349684.67, so the month is unchanged and only the figure moves. Nothing in "
+                "the model says whether its total_sales measure is meant to include cancelled lines -- "
+                "lever: field_doc."
+            ),
+            "mustState": [
+                "Cumulative is year-to-date within 2022, not all-time.",
+            ],
+            "mustNotUse": ["monthly sales alone, with no running total"],
+            "clarifyOk": False,
+            "alternates": [
+                {
+                    "assumption": "running total over non-cancelled sales only",
+                    "value": {"crossing_month": 10, "cume_at_crossing": 4349684.67},
+                    "accept": True,
+                    "lever": "field_doc",
+                },
+                {
+                    "assumption": "running total over the whole file rather than 2022 year-to-date",
+                    "value": {"crossing_month": 1, "crossing_year": 2021, "cume_at_crossing": 4196368.60},
+                    "accept": False,
+                },
+                {
+                    "assumption": "September, from reading monthly totals rather than a running total",
+                    "value": {"crossing_month": 9, "cume_at_crossing": 3978747.61},
+                    "accept": False,
+                },
+            ],
+            "canonicalQuery": (
+                "run: duckdb.table('data/order_items.parquet') -> {\n"
+                "  where: created_at >= @2022-01-01\n"
+                "  group_by: mo is created_at.month\n"
+                "  aggregate: sales is sale_price.sum()\n"
+                "  order_by: mo\n"
+                "  calculate: cume is sum_cumulative(sales)\n"
+                "} -> {\n"
+                "  where: cume >= 4000000\n"
+                "  select:\n"
+                "    crossing_month is month(mo)\n"
+                "    cume_at_crossing is round(cume, 2)\n"
+                "    prev_month_cume is round(cume - sales, 2)\n"
+                "    short_of_4m_prior_month is round(4000000 - (cume - sales), 2)\n"
+                "  order_by: crossing_month asc\n"
+                "  limit: 1\n"
+                "}"
+            ),
+        },
+    },
+    # ---------------------------------------------------------------- window 3
+    {
+        "qid": "ecom_peak_month_per_year",
+        "question": "For each year, which month had our highest sales? Is December always our strongest month?",
+        "tags": ["time", "window-function", "rank-within-group", "truncated-window"],
+        "requiresConcepts": ["rank within year", "order date", "data end date"],
+        "golden": {
+            "kind": "rows",
+            "value": [
+                {"order_year": 2019, "order_month": 12, "monthly_sales": 183589.78},
+                {"order_year": 2020, "order_month": 12, "monthly_sales": 298097.61},
+                {"order_year": 2021, "order_month": 12, "monthly_sales": 420505.65},
+                {"order_year": 2022, "order_month": 10, "monthly_sales": 532215.88},
+            ],
+            "rubric": (
+                "CORRECT: December in 2019 (183589.78), 2020 (298097.61) and 2021 (420505.65); October in "
+                "2022 (532215.88). Requires a window function: the peak has to be picked per year, which "
+                "is rank() partitioned by year (or an equivalent row-number-within-partition), then "
+                "filtered to rank 1. A single global ordering returns four rows from one year, and a "
+                "top-1 over the whole series returns only October 2022. "
+                "The answer to the second half of the question is that December leads in every year that "
+                "has a December, and 2022 does not have one. "
+                "WRONG ANSWER AND ITS NUMBER: reporting that October 2022 (532215.88) broke a "
+                "three-year December pattern -- that the peak moved forward by two months, or that "
+                "seasonality shifted. October is the last complete month in the file; November 2022 holds "
+                "14 days (233779.95) and December 2022 holds nothing at all. October wins 2022 by "
+                "10518.45 over September (521697.43), so it is the true peak of what exists, but it is "
+                "not evidence about seasonality. "
+                "STRUCTURAL ERROR (accept: false): naming November 2022 as the 2022 peak (233779.95 is "
+                "the smallest month of the year, so this is wrong under every reading), or returning a "
+                "single global top month instead of one per year. "
+                "DEFINITIONAL DIVERGENCE (accept: true): restricting 2022 to complete months and saying "
+                "so, which yields the same October answer, or declining to rank 2022 at all on the "
+                "grounds that the year is unfinished. Both are defensible; the model carries no "
+                "date-coverage note that would tell the agent the series is truncated -- lever: source_doc."
+            ),
+            "mustState": [
+                "2022 has no December: the file ends 2022-11-14, so October being the 2022 peak is not a change in seasonality.",
+            ],
+            "mustNotUse": ["October 2022 as evidence that the seasonal peak moved"],
+            "clarifyOk": False,
+            "alternates": [
+                {
+                    "assumption": "2022 excluded or flagged as incomplete rather than ranked alongside the finished years",
+                    "value": [
+                        {"order_year": 2019, "order_month": 12},
+                        {"order_year": 2020, "order_month": 12},
+                        {"order_year": 2021, "order_month": 12},
+                    ],
+                    "accept": True,
+                    "lever": "source_doc",
+                },
+                {
+                    "assumption": "October 2022 read as a genuine shift in the seasonal peak",
+                    "value": [{"order_year": 2022, "order_month": 10, "monthly_sales": 532215.88}],
+                    "accept": False,
+                },
+            ],
+            "canonicalQuery": (
+                "run: duckdb.table('data/order_items.parquet') -> {\n"
+                "  group_by:\n"
+                "    order_year is year(created_at)\n"
+                "    order_month is month(created_at)\n"
+                "  aggregate: monthly_sales is sale_price.sum()\n"
+                "  order_by: order_year asc, monthly_sales desc\n"
+                "  calculate: rank_in_year is rank() { partition_by: order_year }\n"
+                "} -> {\n"
+                "  where: rank_in_year = 1\n"
+                "  select: order_year, order_month, monthly_sales\n"
+                "  order_by: order_year asc\n"
+                "}"
+            ),
+        },
+    },
+    # ---------------------------------------------------------------- window 4
+    {
+        "qid": "ecom_delivery_time_trend_2022",
+        "question": "Has our order-to-delivery time improved in 2022 compared to 2021?",
+        "tags": ["time", "window-function", "lifecycle", "censoring", "date-column-choice"],
+        "requiresConcepts": ["order-to-delivery days", "year-over-year change", "delivered population"],
+        "golden": {
+            "kind": "scalar",
+            "value": {
+                "avg_days_2022": 8.27,
+                "avg_days_2021": 8.308,
+                "yoy_change_days": -0.038,
+                "round": 3,
+            },
+            "rubric": (
+                "CORRECT: essentially no change. Mean days from created_at to delivered_at is 8.270 for "
+                "orders placed in 2022 against 8.308 for 2021, a fall of 0.038 days -- about 55 minutes "
+                "on an eight-day cycle, or 0.46%. The four-year series is 8.294 / 8.294 / 8.308 / 8.270, "
+                "which is flat. A defensible answer says the metric did not move. Requires a window "
+                "function: the year-over-year delta is a comparison to the preceding row, lag() over "
+                "years ordered ascending. "
+                "WRONG ANSWER AND ITS NUMBER: 'yes, delivery time improved by 0.038 days (or 0.46%) in "
+                "2022' presented as a real operational gain. Worse, an agent that looks at recent months "
+                "finds November 2022 averaging 7.441 days against October's 8.261 and reports an 0.8-day "
+                "-- roughly 10% -- improvement. That is right-censoring, not speed: only 2047 of "
+                "November's 5163 line items have a delivered_at at all, because delivered_at runs to "
+                "2022-11-24 while orders stop on 2022-11-14, so November's slow deliveries are simply not "
+                "in the file yet and the surviving sample is biased fast. "
+                "STRUCTURAL ERROR (accept: false): quoting the November figure, or any 2022 improvement "
+                "of about 10%, as evidence that fulfilment got faster. Also structural: measuring the "
+                "wrong leg of the lifecycle -- order-to-ship is 3.492 days and ship-to-delivery is 4.797 "
+                "days overall, and neither is order-to-delivery. "
+                "DEFINITIONAL DIVERGENCE (accept: true): computing the average over Complete lines only, "
+                "excluding the 2672 Returned lines that also carry a delivered_at, or grouping by "
+                "delivered_at's year instead of the order year. Both shift the figure in the third "
+                "decimal and neither changes the verdict of 'flat'. The model defines no fulfilment-time "
+                "measure and does not say which date anchors a cohort -- lever: field_doc."
+            ),
+            "mustState": [
+                "The change is under a tenth of a day and is not a real improvement.",
+                "2022 is right-censored: 3116 of November's 5163 line items have no delivered_at yet, which biases recent delivery times fast.",
+            ],
+            "mustNotUse": ["November 2022's 7.441-day average as evidence of improvement", "ship-to-delivery as order-to-delivery"],
+            "clarifyOk": False,
+            "alternates": [
+                {
+                    "assumption": "Complete lines only, excluding the 2672 Returned lines that also have a delivered_at",
+                    "value": {"verdict": "flat"},
+                    "accept": True,
+                    "lever": "field_doc",
+                },
+                {
+                    "assumption": "recent-months view taken at face value",
+                    "value": {"avg_days_nov_2022": 7.441, "avg_days_oct_2022": 8.261},
+                    "accept": False,
+                },
+            ],
+            "canonicalQuery": (
+                "run: duckdb.table('data/order_items.parquet') -> {\n"
+                "  where: delivered_at is not null\n"
+                "  group_by: order_year is year(created_at)\n"
+                "  aggregate: avg_days_to_deliver is round(avg(days(created_at::date to delivered_at)), 3)\n"
+                "  order_by: order_year\n"
+                "  calculate: prior_year_days is lag(avg_days_to_deliver)\n"
+                "} -> {\n"
+                "  where: order_year = 2022\n"
+                "  select:\n"
+                "    avg_days_2022 is avg_days_to_deliver\n"
+                "    avg_days_2021 is prior_year_days\n"
+                "    yoy_change_days is round(avg_days_to_deliver - prior_year_days, 3)\n"
+                "}"
+            ),
+        },
+    },
+    # ------------------------------------------------------- lifecycle / status
+    {
+        "qid": "ecom_return_lag_after_delivery",
+        "question": "On average, how many days after delivery do customers return an item?",
+        "tags": ["lifecycle", "status", "date-column-choice", "data-quality"],
+        "requiresConcepts": ["returned_at", "delivered_at", "return lag"],
+        "golden": {
+            "kind": "scalar",
+            "value": {
+                "returned_items": 2672,
+                "returned_at_equals_created_at": 2672,
+                "naive_days_delivered_to_returned": -8.2949,
+                "round": 4,
+            },
+            "rubric": (
+                "CORRECT: the data cannot answer this. All 2672 Returned line items carry a returned_at "
+                "that is byte-identical to created_at -- not merely the same day, the same timestamp to "
+                "the second, for every single row. returned_at therefore records the order moment, not a "
+                "return moment, and no return lag can be derived from it. The pass is naming that, "
+                "backed by the identity count (2672 of 2672) and by the fact that returned_at precedes "
+                "delivered_at in every returned row, which is impossible for a real return. "
+                "WRONG ANSWER AND ITS NUMBER: -8.2949 days. Subtracting delivered_at from returned_at "
+                "over the 2672 returned lines gives exactly that: returns appear to happen 8.29 days "
+                "BEFORE delivery, which is the same 8.29-day order-to-delivery cycle with its sign "
+                "flipped. The specific failure to catch is an agent that takes the absolute value, or "
+                "silently orders the subtraction the other way, and reports '8.29 days after delivery' -- "
+                "a plausible-sounding number that is really the shipping time, measured backwards. "
+                "STRUCTURAL ERROR (accept: false): any positive return lag presented as a finding, "
+                "8.2949 above all, and equally the raw -8.29 offered without remarking that a negative "
+                "return lag is impossible. Wrong under every reading, because returned_at carries no "
+                "information about when a return happened. "
+                "DEFINITIONAL DIVERGENCE (accept: true): answering the adjacent question the data does "
+                "support -- how long returned orders took to arrive (8.2949 days from order to delivery, "
+                "the same magnitude positive) -- provided it is labelled as delivery time and not as a "
+                "return lag. The model's field doc on returned_at reads 'When the item was returned "
+                "(null if not returned)', which is false for all 2672 rows and is what licenses the "
+                "mistake -- lever: field_doc."
+            ),
+            "mustState": [
+                "returned_at is identical to created_at for all 2672 returned line items, so it does not record when the return happened.",
+                "A return lag measured from delivered_at comes out negative, which is impossible.",
+            ],
+            "mustNotUse": ["8.29 days as a return lag", "abs() over a negative lag"],
+            "clarifyOk": False,
+            "alternates": [
+                {
+                    "assumption": "answers the supported adjacent question, order-to-delivery time for returned orders, and labels it as such",
+                    "value": {"avg_days_order_to_delivery_returned": 8.2949},
+                    "accept": True,
+                    "lever": "field_doc",
+                },
+                {
+                    "assumption": "sign of the subtraction dropped",
+                    "value": {"days_after_delivery": 8.2949},
+                    "accept": False,
+                },
+            ],
+            "canonicalQuery": (
+                "run: duckdb.table('data/order_items.parquet') -> {\n"
+                "  where: status = 'Returned'\n"
+                "  aggregate:\n"
+                "    returned_items is count()\n"
+                "    returned_at_equals_created_at is count() { where: returned_at = created_at }\n"
+                "    naive_days_delivered_to_returned is round(avg(days(delivered_at to returned_at::date)), 4)\n"
+                "}"
+            ),
+        },
+    },
+    {
+        "qid": "ecom_returned_orders_count",
+        "question": "How many of our orders were returned?",
+        "tags": ["status", "lifecycle", "grain"],
+        "requiresConcepts": ["order vs line item", "status Returned"],
+        "golden": {
+            "kind": "scalar",
+            "value": {
+                "returned_orders": 2662,
+                "fully_returned_orders": 2536,
+                "partially_returned_orders": 126,
+            },
+            "rubric": (
+                "CORRECT: 2662 orders contain at least one returned line. Of those, 2536 were returned in "
+                "full and 126 were returned in part, so the order-grain answer depends on a choice the "
+                "question leaves open and a good answer names it. "
+                "WRONG ANSWER AND ITS NUMBER: 2672. That is the count of Returned LINE ITEMS, which is "
+                "what a plain count() over status = 'Returned' returns, and it is 10 too many because 10 "
+                "of the returned orders have more than one returned line. The gap is small enough -- "
+                "0.4% -- that nothing about 2672 looks wrong, which is exactly why the case is here: an "
+                "agent reaching for the model's order_item_count instead of order_count gets a number "
+                "that survives a sanity check. "
+                "STRUCTURAL ERROR (accept: false): 2672 reported as a number of orders. Wrong under every "
+                "reading, because it counts line items and the question asks about orders. "
+                "DEFINITIONAL DIVERGENCE (accept: true): 2536, counting only orders returned in their "
+                "entirety, which is a real and arguably stricter reading of 'the order was returned'. "
+                "The model has no order-level entity at all -- order_id is a dimension on the line-item "
+                "source and there is nothing that says whether a partially returned order counts -- "
+                "lever: entities. Note also that 156 orders in total carry mixed line statuses, so "
+                "order-level status is genuinely undefined in this model, not merely undocumented."
+            ),
+            "mustState": [
+                "Orders, not line items: 2662 orders against 2672 returned lines.",
+            ],
+            "mustNotUse": ["2672 as a count of orders"],
+            "clarifyOk": True,
+            "alternates": [
+                {
+                    "assumption": "only orders where every line was returned",
+                    "value": {"returned_orders": 2536},
+                    "accept": True,
+                    "lever": "entities",
+                },
+                {
+                    "assumption": "returned line items counted as orders",
+                    "value": {"returned_orders": 2672},
+                    "accept": False,
+                },
+            ],
+            "canonicalQuery": (
+                "run: duckdb.table('data/order_items.parquet') -> {\n"
+                "  group_by: order_id\n"
+                "  aggregate:\n"
+                "    lines is count()\n"
+                "    returned_lines is count() { where: status = 'Returned' }\n"
+                "} -> {\n"
+                "  aggregate:\n"
+                "    returned_orders is count() { where: returned_lines > 0 }\n"
+                "    fully_returned_orders is count() { where: returned_lines = lines }\n"
+                "    partially_returned_orders is count() { where: returned_lines > 0 and returned_lines < lines }\n"
+                "}"
+            ),
+        },
+    },
+    {
+        "qid": "ecom_open_orders",
+        "question": "How many orders are still open right now -- placed but not yet delivered or cancelled?",
+        "tags": ["status", "lifecycle", "grain"],
+        "requiresConcepts": ["open order", "status Processing", "status Shipped", "delivered_at null"],
+        "golden": {
+            "kind": "scalar",
+            "value": {
+                "open_orders": 2894,
+                "open_line_items": 2954,
+                "undelivered_including_cancelled": 12176,
+            },
+            "rubric": (
+                "CORRECT: 2894 orders. Open means still in the pipeline, which is the two in-flight "
+                "statuses: Processing (not yet shipped) and Shipped (shipped, not yet delivered). Those "
+                "cover 2954 line items across 2894 distinct orders. "
+                "WRONG ANSWER AND ITS NUMBER, first trap: 12176. Reading 'not yet delivered' literally as "
+                "delivered_at is null sweeps in every cancelled order too -- 12464 line items, of which "
+                "9510 are Cancelled -- giving 12176 orders, more than four times the right answer. The "
+                "question excludes cancelled in so many words, and delivered_at is null does not. "
+                "WRONG ANSWER AND ITS NUMBER, second trap: 2908. Counting distinct orders per status and "
+                "adding them (1207 Processing plus 1701 Shipped) double-counts the 14 orders that have a "
+                "Processing line and a Shipped line, so the correct figure is 2894, 14 lower. This one is "
+                "genuinely hard to see: the two per-status counts are each correct and their sum is not. "
+                "STRUCTURAL ERROR (accept: false): 12176 or 12464, because cancelled orders are not open "
+                "under any reading; 2908, because distinct counts do not add; and 2954 offered as a "
+                "number of orders, because that is the line-item count. "
+                "DEFINITIONAL DIVERGENCE (accept: true): counting only Processing (1207 orders) on the "
+                "grounds that a shipped order is fulfilled and no longer 'open'. That is a real "
+                "operational reading. The model documents status only as a list of its five values and "
+                "defines no open, in-flight or fulfilled grouping -- lever: field_doc."
+            ),
+            "mustState": [
+                "Cancelled orders are excluded; delivered_at is null alone would include them.",
+                "Orders, not line items, and distinct order counts across statuses cannot be summed.",
+            ],
+            "mustNotUse": ["delivered_at is null as the sole definition of open", "1207 + 1701 as a sum"],
+            "clarifyOk": True,
+            "alternates": [
+                {
+                    "assumption": "open means not yet shipped, so Processing only",
+                    "value": {"open_orders": 1207},
+                    "accept": True,
+                    "lever": "field_doc",
+                },
+                {
+                    "assumption": "delivered_at is null, which includes cancelled",
+                    "value": {"open_orders": 12176},
+                    "accept": False,
+                },
+                {
+                    "assumption": "per-status distinct order counts added together",
+                    "value": {"open_orders": 2908},
+                    "accept": False,
+                },
+            ],
+            "canonicalQuery": (
+                "run: duckdb.table('data/order_items.parquet') -> {\n"
+                "  aggregate:\n"
+                "    open_orders is count(order_id) { where: status = 'Processing' or status = 'Shipped' }\n"
+                "    open_line_items is count() { where: status = 'Processing' or status = 'Shipped' }\n"
+                "    undelivered_including_cancelled is count(order_id) { where: delivered_at is null }\n"
+                "}"
+            ),
+        },
+    },
+    {
+        "qid": "ecom_units_sold_2022",
+        "question": "How many units did we sell in 2022?",
+        "tags": ["status", "time", "truncated-window", "population"],
+        "requiresConcepts": ["units sold", "status Cancelled", "sold_at"],
+        "golden": {
+            "kind": "scalar",
+            "value": {
+                "units_sold": 98703,
+                "all_2022_lines": 102274,
+                "cancelled_2022_lines": 3571,
+            },
+            "rubric": (
+                "CORRECT: 98703 units, being 2022 line items excluding the 3571 Cancelled ones. A "
+                "cancelled order is not a unit sold. The answer should also say that 2022 covers only "
+                "2022-01-01 to 2022-11-14. "
+                "WRONG ANSWER AND ITS NUMBER: 102274. That is every 2022 line item, cancelled included, "
+                "and it has an unusually seductive route: inventory_items carries a sold_at column, so an "
+                "agent that reasons 'sold_at is literally when it sold' and counts inventory rows with "
+                "sold_at in 2022 gets 102274 -- the identical figure. sold_at is a copy of "
+                "order_items.created_at (same 271019 rows, same 2022-11-14 23:55:09 maximum), so it marks "
+                "the moment an item was attached to an order and is set even when that order was "
+                "cancelled. The column name asserts a fact about the lifecycle that the column does not "
+                "carry. "
+                "STRUCTURAL ERROR (accept: false): 102274 presented as units sold, whether reached "
+                "through order_items or through inventory_items.sold_at, because cancelled units are not "
+                "sold under any reading. Also structural: 271019 or 487936, which are all-time line "
+                "items and all inventory rows and ignore the year entirely. "
+                "DEFINITIONAL DIVERGENCE (accept: true): 97733, additionally netting out the 970 lines "
+                "returned in 2022, or 94779 for Complete lines only, which drops the in-flight "
+                "Processing and Shipped units as well. Both are defensible readings of gross versus net "
+                "units. The model's own house rule, in user_order_facts.lifetime_spend, excludes "
+                "Cancelled and Returned together, which points at 97733 -- but that rule is buried in one "
+                "measure's expression and no field doc states it, so an agent may never see it -- lever: "
+                "field_doc."
+            ),
+            "mustState": [
+                "Cancelled lines are excluded from units sold.",
+                "2022 in this data runs only to 2022-11-14.",
+            ],
+            "mustNotUse": ["inventory_items.sold_at as a count of units actually sold"],
+            "clarifyOk": True,
+            "alternates": [
+                {
+                    "assumption": "net of returns as well, matching the lifetime_spend house rule",
+                    "value": {"units_sold": 97733},
+                    "accept": True,
+                    "lever": "field_doc",
+                },
+                {
+                    "assumption": "Complete lines only",
+                    "value": {"units_sold": 94779},
+                    "accept": True,
+                    "lever": "field_doc",
+                },
+                {
+                    "assumption": "all 2022 lines, or inventory_items.sold_at in 2022",
+                    "value": {"units_sold": 102274},
+                    "accept": False,
+                },
+            ],
+            "canonicalQuery": (
+                "run: duckdb.table('data/order_items.parquet') -> {\n"
+                "  where: year(created_at) = 2022\n"
+                "  aggregate:\n"
+                "    units_sold is count() { where: status != 'Cancelled' }\n"
+                "    all_2022_lines is count()\n"
+                "    cancelled_2022_lines is count() { where: status = 'Cancelled' }\n"
+                "}"
+            ),
+        },
+    },
+]
+
+
+def build(case: dict) -> dict:
+    golden = dict(case["golden"])
+    golden.setdefault("status", "provisional")
+    golden.setdefault("receipts", [])
+    golden["verifiedBy"] = VERIFIED
+    return {
+        "qid": case["qid"],
+        "question": case["question"],
+        "split": "dev",
+        "tags": case["tags"],
+        "state": "selected",
+        "source": SOURCE,
+        "questionSha": hashlib.sha256(case["question"].encode()).hexdigest()[:16],
+        "golden": golden,
+        "goldenRevision": 1,
+        "requiresConcepts": case["requiresConcepts"],
+        "executions": [],
+    }
+
+
+out = pathlib.Path(__file__).parent / "candidates-time.jsonl"
+lines = [json.dumps(build(c), ensure_ascii=False) for c in CASES]
+out.write_text("\n".join(lines) + "\n")
+print(f"wrote {len(lines)} cases to {out.name}")
+qids = [c["qid"] for c in CASES]
+assert len(set(qids)) == len(qids), "duplicate qid"

@@ -1,0 +1,16 @@
+{
+  "name": "ecommerce",
+  "description": "Meaning and grain problems over the malloy-samples ecommerce package. Goldens are computed from semantics-free truth sources (truth/), never from the semantic model under test.",
+  "datasetVersion": 13,
+  "targetModelPath": "ecommerce.malloy",
+  "targetPackage": "ecommerce",
+  "truthPackage": "ecommerce-truth",
+  "notes": {
+    "sizing": "49 cases, 35 dev / 14 holdout. Refusal is measured in both directions: 4 cases where the data is absent and declining is the pass, and 4 that sound like those and are answerable, where declining is the failure. Measuring only the first rewards an agent that refuses everything.",
+    "contamination": "Lives at the repo root, deliberately outside ecommerce/, which the Publisher serves in full - publisher.json declares no file scoping, so anything under ecommerce/ is indexed and retrievable.",
+    "coverage": "Coverage per videoamp-eval-framework.md 3.3: 21 covered, 24 derivable, 4 absent. Only absent makes a refusal correct. coverageNote on each non-covered case names the entity that would close it.",
+    "intentCoverage": "Coverage judged against ecommerce @ malloy-samples, judged 2026-08-30: 37 of 48 valid intents covered (77%), 6 derivable, 5 absent. Re-judge when the model changes; the rows do not change. Coverage is the ceiling on recall, so recall and precision are computed over the covered set only -- scoring a derivable or absent intent as a retrieval miss blames search for a modelling gap.",
+    "retrieval": "All 45 answerable cases carry expectedEntities derived from an executing modelQuery that must reproduce the golden. 34 distinct entities exercised. Recall over `required`, precision over anything outside `acceptable`. See RETRIEVAL-SCORING.md."
+  },
+  "truthTableRewrite": true
+}

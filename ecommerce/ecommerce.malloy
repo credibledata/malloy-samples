@@ -103,7 +103,9 @@ include {
   public: cost
   #(doc) When this inventory item was received
   public: created_at
-  #(doc) When this item was sold (null if unsold)
+  #(doc) When this item was attached to an order line. Despite the name it is not
+  #(doc) evidence of a sale: it is a copy of order_items.created_at and is set even
+  #(doc) when that order was cancelled. Count order_items.units_sold for units sold.
   public: sold_at
 }
 extend {
@@ -120,30 +122,54 @@ extend {
     total_cost is cost.sum()
 }
 
+#(doc) One row per customer, holding lifetime order, spend, and recency facts.
+#(doc) Use this to count or segment customers — top customers, best customers,
+#(doc) VIP and high spenders, repeat and frequent buyers, churn risk from recency —
+#(doc) because each row is a customer. Counting rows in order_items instead counts
+#(doc) line items, not people.
 source: user_order_facts is
   duckdb.table('data/order_items.parquet') -> {
     group_by: user_id
     aggregate:
       first_order is min(created_at)
       most_recent_order is max(created_at)
-      lifetime_orders is count()
+      #(doc) Distinct orders the user has placed. The grain here is line items,
+      #(doc) so this must count order_id rather than rows.
+      lifetime_orders is count(order_id)
+      #(doc) Total line-item rows across the user's orders. An order with three
+      #(doc) items counts three times, so this is not an order count.
+      lifetime_lines is count()
+      #(doc) Lifetime money the customer has spent, summing sale_price over lines
+      #(doc) that were not cancelled or returned. This is customer value; see
+      #(doc) spend_category for the named tiers cut from it.
       lifetime_spend is sale_price.sum() { where: status != 'Cancelled' | 'Returned' }
   }
 extend {
   primary_key: user_id
 
   dimension:
-    #(doc) Whether the user has placed more than 10 orders
+    #(doc) Whether this customer is a top customer, which the business defines by
+    #(doc) order frequency: more than 10 distinct orders placed. This is the default
+    #(doc) reading of "top customer", "best customer" or "loyal customer" — filter on
+    #(doc) it to count them. For top customers by money spent rather than by how often
+    #(doc) they order, use spend_category, whose highest tier is VIP.
     top_customer is lifetime_orders > 10
 
-    #(doc) Order frequency tier based on lifetime order count
+    #(doc) Customer frequency tier, cut from lifetime_orders (distinct orders):
+    #(doc) '1 to 3', '4 to 6', '7 to 10', '11+'. Use it to band customers from
+    #(doc) one-time buyers to frequent, repeat buyers; the '11+' band is exactly the
+    #(doc) top_customer group. For value tiers instead, use spend_category.
     lifetime_order_tier is lifetime_orders ?
       pick '1 to 3' when < 4
       pick '4 to 6' when < 7
       pick '7 to 10' when < 11
       else '11+'
 
-    #(doc) Spend tier based on total non-cancelled/returned spend
+    #(doc) Customer value tier, cut from lifetime_spend: 'Low Spend' under 50,
+    #(doc) 'Mid Spend' 50 to 499, 'High Spend' 500 to 999, 'VIP' 1000 and above.
+    #(doc) This ranks customers by money spent, so a VIP or high-spending customer
+    #(doc) is a top customer by value. For top customers by how often they order,
+    #(doc) use top_customer or lifetime_order_tier instead.
     spend_category is lifetime_spend ?
       pick 'Low Spend' when < 50
       pick 'Mid Spend' when < 500
@@ -165,11 +191,15 @@ include {
   public: inventory_item_id
   #(doc) Actual sale price for this line item
   public: sale_price
-  #(doc) Order status: Complete, Cancelled, Returned, Processing, or Shipped
+  #(doc) Order lifecycle state, one value per line: Complete, Shipped, Processing,
+  #(doc) Cancelled, or Returned. Cancelled lines never ship and are not sales;
+  #(doc) every other status is a sale (see units_sold).
   public: status
-  #(doc) When the order was placed
+  #(doc) When the order was placed. Orders run 2019-01-01 to 2022-11-14, so 2022
+  #(doc) is a partial year ending mid-November.
   public: created_at
-  #(doc) When the order shipped (null if not shipped)
+  #(doc) When the order shipped (null if not shipped). Stored as a date, not a
+  #(doc) timestamp, so ship time is only known to the calendar day.
   public: shipped_at
   #(doc) When the order was delivered (null if not delivered)
   public: delivered_at
@@ -192,7 +222,30 @@ extend {
     # currency=usd
     gross_margin is sale_price - inventory_items.cost
 
+    #(doc) Calendar days from order to shipment. shipped_at is a date, so time to
+    #(doc) ship is counted in whole calendar days, not exact elapsed hours; null
+    #(doc) on lines that have not shipped.
+    days_to_ship is days(created_at::date to shipped_at)
+
   measure:
+    #(doc) Units sold: line items whose order was not cancelled. A cancelled line
+    #(doc) is not a unit sold. Returned lines still count, so this is gross units.
+    #(doc) This is a volume measure, not a denominator for rates over all orders:
+    #(doc) a rate computed against it silently excludes cancellations, so for
+    #(doc) return rate or cancellation rate count all lines instead.
+    # number=auto
+    units_sold is count() { where: status != 'Cancelled' }
+
+    #(doc) Line items that have shipped. The denominator for avg_days_to_ship;
+    #(doc) unshipped lines are all Cancelled or still Processing.
+    # number=auto
+    shipped_item_count is count() { where: shipped_at is not null }
+
+    #(doc) Average calendar days from order to shipment, over shipped lines only.
+    #(doc) Recent orders are right-censored: orders stop 2022-11-14 but shipments
+    #(doc) run to 2022-11-20, so late-2022 orders that will ship are still unshipped.
+    avg_days_to_ship is avg(days_to_ship)
+
     #(doc) Distinct order count
     # number=auto
     order_count is count(order_id)
