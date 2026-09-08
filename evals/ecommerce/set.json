@@ -1,14 +1,14 @@
 {
   "name": "ecommerce",
   "description": "Meaning and grain problems over the malloy-samples ecommerce package. Goldens are computed from semantics-free truth sources (truth/), never from the semantic model under test.",
-  "datasetVersion": 13,
+  "datasetVersion": 14,
   "targetModelPath": "ecommerce.malloy",
   "targetPackage": "ecommerce",
   "truthPackage": "ecommerce-truth",
   "notes": {
     "sizing": "49 cases, 35 dev / 14 holdout. Refusal is measured in both directions: 4 cases where the data is absent and declining is the pass, and 4 that sound like those and are answerable, where declining is the failure. Measuring only the first rewards an agent that refuses everything.",
     "contamination": "Lives at the repo root, deliberately outside ecommerce/, which the Publisher serves in full - publisher.json declares no file scoping, so anything under ecommerce/ is indexed and retrievable.",
-    "coverage": "Coverage per videoamp-eval-framework.md 3.3: 21 covered, 24 derivable, 4 absent. Only absent makes a refusal correct. coverageNote on each non-covered case names the entity that would close it.",
+    "coverage": "Coverage per videoamp-eval-framework.md 3.3: 24 covered, 21 derivable, 4 absent. Only absent makes a refusal correct. coverageNote on each non-covered case names the entity that would close it. Re-audited against the model as shipped: three cases moved derivable -> covered because their notes called a measure missing that the model declares (order_items.avg_days_to_ship, storefront.margin_rate), and three notes were corrected without moving a label. A note asserting absence is a claim about one model version and goes stale the moment the model gains a measure; re-audit with check_coverage.py --compare-labels, which prints label-versus-model disagreements and takes no position on which side is wrong. OPEN: ecom_unsold_inventory and ecom_unsold_stock_value are labelled covered, but their PREFERRED golden needs a join_one on order_items that inventory_items does not declare, and their modelQuery returns the rubric's divergent 216,917 rather than golden.value 226,427 -- so either the label is derivable or the modelQuery is not the one the goldens were computed from. Both goldens are still status: provisional.",
     "intentCoverage": "Coverage judged against ecommerce @ malloy-samples, judged 2026-08-30: 37 of 48 valid intents covered (77%), 6 derivable, 5 absent. Re-judge when the model changes; the rows do not change. Coverage is the ceiling on recall, so recall and precision are computed over the covered set only -- scoring a derivable or absent intent as a retrieval miss blames search for a modelling gap.",
     "retrieval": "All 45 answerable cases carry expectedEntities derived from an executing modelQuery that must reproduce the golden. 34 distinct entities exercised. Recall over `required`, precision over anything outside `acceptable`. See RETRIEVAL-SCORING.md."
   },
