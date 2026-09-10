@@ -1,0 +1,6 @@
+# Run output. The run RECORD (run.json, events.jsonl) is small and worth keeping in
+# a private repo beside the model; in this samples repo nothing under runs/ is
+# committed. Artifacts (transcripts, judge output) stay on the machine that ran them.
+runs/
+__pycache__/
+*.pyc
