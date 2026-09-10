@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Moved. The golden verifier is now shared by every set:
+"""Moved. The golden verifier is now shared by every set, and lives with the
+skills in malloydata/publisher -- the source of truth for them, per README.md;
+the ms2data/agent-skills mirror can be behind, and the scripts are the harness.
 
-  ms2data/agent-skills  skills/eval-answer/scripts/verify_goldens.py
-  python3 <agent-skills>/skills/eval-answer/scripts/verify_goldens.py \
-      --set evals/ecommerce --publisher http://localhost:4811 --environment samples \
+  python3 <publisher>/skills/eval-answer/scripts/verify_goldens.py \
+      --set evals/ecommerce --publisher http://localhost:4812 --environment samples \
       --model ecommerce/ecommerce.malloy
+
+`--publisher` is the TRUTH server, 4812 in README.md's layout, and it has no
+default: a golden re-derived through the port the ANSWERER is on tells you
+nothing. Omit it and the value check reports as not run (exit 3) instead of
+guessing. The verifier also refuses a server that holds the model under test
+alongside the truth package, because an answerer there can retrieve the raw
+truth sources beside the model.
 
 What this set needed that the shared script did not have is now a `set.json`
 field: `truthTableRewrite: true` rewrites `duckdb.table('data/x.parquet')` in a
