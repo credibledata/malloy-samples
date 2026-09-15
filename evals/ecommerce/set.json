@@ -1,7 +1,7 @@
 {
   "name": "ecommerce",
   "description": "Meaning and grain problems over the malloy-samples ecommerce package. Goldens are computed from semantics-free truth sources (truth/), never from the semantic model under test.",
-  "datasetVersion": 16,
+  "datasetVersion": 17,
   "targetModelPath": "ecommerce.malloy",
   "targetPackage": "ecommerce",
   "truthPackage": "ecommerce-truth",
