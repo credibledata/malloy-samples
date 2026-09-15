@@ -277,7 +277,9 @@ extend {
     # number=auto
     user_count is users.count()
 
-    #(doc) Total sales in 2022
+    #(doc) Total sales in 2022. Orders stop 2022-11-14, so this is a partial
+    #(doc) year ending mid-November, not a full one: do not compare it to a
+    #(doc) complete year without saying so.
     # currency=usd
     total_sales_2022 is total_sales { where: year(created_at) = 2022 }
 
@@ -410,7 +412,9 @@ extend {
       top_customers + { aggregate: order_count }
   }
 
-  #(doc) Year-over-year sales comparison (2021 vs 2022) with growth metrics
+  #(doc) Year-over-year sales comparison (2021 vs 2022) with growth metrics.
+  #(doc) 2022 is a PARTIAL year: orders stop 2022-11-14, so the growth figures
+  #(doc) compare ten and a half months against twelve and understate 2022.
   view: sales_summary_yoy is {
     aggregate:
       total_sales_2022
