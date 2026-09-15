@@ -1,0 +1,24 @@
+{
+ "qid": "ecom_cumulative_4m_crossing_2022",
+ "primaryQuery": "run: order_items -> {\n  where: created_at >= @2022-01-01\n  group_by: mo is created_at.month\n  aggregate: sales is sale_price.sum()\n  order_by: mo\n  calculate: cume is sum_cumulative(sales)\n} -> {\n  where: cume >= 4000000\n  select:\n    crossing_month is month(mo)\n    cume_at_crossing is round(cume, 2)\n    prev_month_cume is round(cume - sales, 2)\n    short_of_4m_prior_month is round(4000000 - (cume - sales), 2)\n  order_by: crossing_month asc\n  limit: 1\n}",
+ "truthRows": [
+  {
+   "crossing_month": 10,
+   "cume_at_crossing": 4510963.5,
+   "prev_month_cume": 3978747.61,
+   "short_of_4m_prior_month": 21252.39
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  where: created_at ? @2022\n  group_by: mo is created_at.month\n  aggregate: sales is sale_price.sum()\n} extend {\n  join_many: earlier is order_items -> {\n    where: created_at ? @2022\n    group_by: mo is created_at.month\n    aggregate: sales is sale_price.sum()\n  } on earlier.mo <= mo\n} -> {\n  group_by: mo\n  aggregate:\n    cume is earlier.sales.sum()\n    month_sales is sales.sum()\n} -> {\n  where: cume >= 4000000\n  select:\n    crossing_month is month(mo)\n    cume_at_crossing is round(cume, 2)\n    prev_month_cume is round(cume - month_sales, 2)\n    short_of_4m_prior_month is round(4000000 - (cume - month_sales), 2)\n  order_by: crossing_month asc\n  limit: 1\n}",
+ "verifyRows": [
+  {
+   "crossing_month": 10,
+   "cume_at_crossing": 4510963.5,
+   "prev_month_cume": 3978747.61,
+   "short_of_4m_prior_month": 21252.39
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "self-join: cumulative as sum over earlier months via inequality join",
+ "checkedAt": "2026-09-14"
+}

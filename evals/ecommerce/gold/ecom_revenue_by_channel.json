@@ -1,0 +1,52 @@
+{
+ "qid": "ecom_revenue_by_channel",
+ "primaryQuery": "run: order_items extend { join_one: u is users on user_id = u.id } -> {\n  group_by: channel is u.traffic_source\n  aggregate: revenue is round(sale_price.sum(), 2)\n  order_by: revenue desc\n}",
+ "truthRows": [
+  {
+   "channel": "Search",
+   "revenue": 9267111.74
+  },
+  {
+   "channel": "Organic",
+   "revenue": 1960511.57
+  },
+  {
+   "channel": "Facebook",
+   "revenue": 559297.36
+  },
+  {
+   "channel": "Display",
+   "revenue": 414084.5
+  },
+  {
+   "channel": "Email",
+   "revenue": 365287.7
+  }
+ ],
+ "verifyQuery": "run: users extend {\n  join_many: oi is order_items on id = oi.user_id\n} -> {\n  group_by: channel is traffic_source\n  aggregate: revenue is round(oi.sale_price.sum(), 2)\n  order_by: revenue desc\n}",
+ "verifyRows": [
+  {
+   "channel": "Search",
+   "revenue": 9267111.74
+  },
+  {
+   "channel": "Organic",
+   "revenue": 1960511.57
+  },
+  {
+   "channel": "Facebook",
+   "revenue": 559297.36
+  },
+  {
+   "channel": "Display",
+   "revenue": 414084.5
+  },
+  {
+   "channel": "Email",
+   "revenue": 365287.7
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: users join_many order_items",
+ "checkedAt": "2026-09-14"
+}

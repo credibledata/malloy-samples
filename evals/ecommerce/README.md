@@ -48,13 +48,24 @@ S=<publisher>/skills
 # 1. Two servers, each in its own session so a closed shell cannot take it down.
 #    The answerer's serves ONLY the model under test; the truth server serves ONLY the truth.
 python3 $S/eval-loop/scripts/serve.py --publisher-dir <publisher>/packages/server \
-  --server-root /tmp/evalroot  --port 4811 --mcp-port 4040 --trace-retrieval
+  --server-root /tmp/evalroot  --port 4811 --mcp-port 4040 --trace-retrieval \
+  --warm-retrieval --environment samples --package ecommerce
+#    (4040 is Publisher's default MCP port; if another Publisher already holds it,
+#     pick any free port and pass the same one as --mcp-url below)
 python3 $S/eval-loop/scripts/serve.py --publisher-dir <publisher>/packages/server \
   --server-root /tmp/truthroot --port 4812 --mcp-port 4041
 #    (each server root needs a publisher.config.json naming its one package by absolute path:
 #     {"frozenConfig": false, "environments": [{"name": "samples",
 #       "packages": [{"name": "ecommerce", "location": "<samples>/ecommerce"}]}]}  — and likewise
 #     "ecommerce-truth" for the truth root)
+
+# 1b. Only after a golden repair. The set ships with every golden `verified`; a
+#     repaired golden returns to `provisional` until it re-derives from the truth
+#     server AND its second derivation (golden.verification, rows in gold/<qid>.json)
+#     agrees. --promote does that check and marks it verified again; run_baseline
+#     refuses to spend on a set whose keys are all unestablished.
+python3 $S/eval-answer/scripts/verify_goldens.py --set <samples>/evals/ecommerce \
+  --publisher http://localhost:4812 --environment samples --target-package ecommerce --promote
 
 # 2. Smoke one case (about $0.15), then the arm (a few dollars, a few minutes).
 #    Goldens are re-derived from the truth server first; a drifted set refuses to run.

@@ -1,0 +1,52 @@
+{
+ "qid": "ecom_most_returned_products",
+ "primaryQuery": "run: order_items extend {\n  join_one: ii is inventory_items on inventory_item_id = ii.id\n} -> {\n  where: status = 'Returned'\n  top: 5\n  group_by: product_name is ii.product_name\n  aggregate: returned_items is count()\n  order_by: returned_items desc, product_name asc\n}",
+ "truthRows": [
+  {
+   "product_name": "Ray-Ban RB2132  New Wayfarer Sunglasses",
+   "returned_items": 122
+  },
+  {
+   "product_name": "Levi's Men's 501 Jean",
+   "returned_items": 83
+  },
+  {
+   "product_name": "Columbia Men's Steens Mountain Full Zip",
+   "returned_items": 44
+  },
+  {
+   "product_name": "Levi's Men's 505 Straight (Regular) Fit Jean",
+   "returned_items": 37
+  },
+  {
+   "product_name": "Levi's Men's 550 Relaxed Fit Jean",
+   "returned_items": 31
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_one: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: oi.status = 'Returned'\n  top: 5\n  group_by: product_name\n  aggregate: returned_items is oi.count()\n  order_by: returned_items desc, product_name asc\n}",
+ "verifyRows": [
+  {
+   "product_name": "Ray-Ban RB2132  New Wayfarer Sunglasses",
+   "returned_items": 122
+  },
+  {
+   "product_name": "Levi's Men's 501 Jean",
+   "returned_items": 83
+  },
+  {
+   "product_name": "Columbia Men's Steens Mountain Full Zip",
+   "returned_items": 44
+  },
+  {
+   "product_name": "Levi's Men's 505 Straight (Regular) Fit Jean",
+   "returned_items": 37
+  },
+  {
+   "product_name": "Levi's Men's 550 Relaxed Fit Jean",
+   "returned_items": 31
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: inventory_items joined to order_items, count oi rows per product_name",
+ "checkedAt": "2026-09-14"
+}

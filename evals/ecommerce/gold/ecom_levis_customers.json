@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_levis_customers",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  where: inventory_items.product_brand = 'Levi\\'s'\n  aggregate: customers is count(user_id)\n}",
+ "truthRows": [
+  {
+   "customers": 27016
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_many: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: product_brand = 'Levi\\'s'\n  aggregate: customers is count(oi.user_id)\n}",
+ "verifyRows": [
+  {
+   "customers": 27016
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: inventory_items join_many order_items",
+ "checkedAt": "2026-09-14"
+}

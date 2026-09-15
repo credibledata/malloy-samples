@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_customer_count",
+ "primaryQuery": "run: order_items -> {\n  aggregate: buyers is count(user_id)\n}",
+ "truthRows": [
+  {
+   "buyers": 133345
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: user_id\n} -> {\n  aggregate: buyers is count()\n}",
+ "verifyRows": [
+  {
+   "buyers": 133345
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "group by user_id then count rows",
+ "checkedAt": "2026-09-14"
+}

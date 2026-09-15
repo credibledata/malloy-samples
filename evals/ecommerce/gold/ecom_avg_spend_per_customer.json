@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_avg_spend_per_customer",
+ "primaryQuery": "run: order_items -> {\n  aggregate:\n    total_sales is sale_price.sum()\n    customers is count(user_id)\n} -> {\n  select:\n    total_sales\n    customers\n    avg_spend_per_customer is round(total_sales / customers, 4)\n}",
+ "truthRows": [
+  {
+   "total_sales": 12566292.875474572,
+   "customers": 133345,
+   "avg_spend_per_customer": 94.239
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: user_id\n  aggregate: spend is sale_price.sum()\n} -> {\n  aggregate: total_sales is spend.sum(), customers is count()\n} -> {\n  select: total_sales, customers, avg_spend_per_customer is round(total_sales / customers, 4)\n}",
+ "verifyRows": [
+  {
+   "total_sales": 12566292.875474572,
+   "customers": 133345,
+   "avg_spend_per_customer": 94.239
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by user_id then re-aggregate",
+ "checkedAt": "2026-09-14"
+}

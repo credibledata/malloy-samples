@@ -1,0 +1,52 @@
+{
+ "qid": "ecom_peak_month_per_year",
+ "primaryQuery": "run: order_items -> {\n  group_by:\n    order_year is year(created_at)\n    order_month is month(created_at)\n  aggregate: monthly_sales is sale_price.sum()\n  order_by: order_year asc, monthly_sales desc\n  calculate: rank_in_year is rank() { partition_by: order_year }\n} -> {\n  where: rank_in_year = 1\n  select: order_year, order_month, monthly_sales\n  order_by: order_year asc\n}",
+ "truthRows": [
+  {
+   "order_year": 2019,
+   "order_month": 12,
+   "monthly_sales": 183589.78070259094
+  },
+  {
+   "order_year": 2020,
+   "order_month": 12,
+   "monthly_sales": 298097.6110602617
+  },
+  {
+   "order_year": 2021,
+   "order_month": 12,
+   "monthly_sales": 420505.65155911446
+  },
+  {
+   "order_year": 2022,
+   "order_month": 10,
+   "monthly_sales": 532215.8820621967
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: order_year is year(created_at)\n  nest: peak is {\n    group_by: order_month is month(created_at)\n    aggregate: monthly_sales is sale_price.sum()\n    order_by: monthly_sales desc\n    limit: 1\n  }\n} -> {\n  select: order_year, peak.order_month, peak.monthly_sales\n  order_by: order_year asc\n}",
+ "verifyRows": [
+  {
+   "order_year": 2019,
+   "order_month": 12,
+   "monthly_sales": 183589.78070259094
+  },
+  {
+   "order_year": 2020,
+   "order_month": 12,
+   "monthly_sales": 298097.6110602617
+  },
+  {
+   "order_year": 2021,
+   "order_month": 12,
+   "monthly_sales": 420505.65155911446
+  },
+  {
+   "order_year": 2022,
+   "order_month": 10,
+   "monthly_sales": 532215.8820621967
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "nested top-1 month per year (nest with limit 1) then flatten, no window function",
+ "checkedAt": "2026-09-14"
+}

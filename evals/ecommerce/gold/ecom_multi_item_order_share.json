@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_multi_item_order_share",
+ "primaryQuery": "run: order_items -> {\n  group_by: order_id\n  aggregate: line_items is count()\n} -> {\n  aggregate:\n    orders is count()\n    multi_item_orders is count() { where: line_items > 1 }\n} -> {\n  select:\n    orders\n    multi_item_orders\n    multi_item_share is round(multi_item_orders / orders, 4)\n}",
+ "truthRows": [
+  {
+   "orders": 264071,
+   "multi_item_orders": 6730,
+   "multi_item_share": 0.0255
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: order_id\n  aggregate: line_items is count()\n} -> {\n  group_by: line_items\n  aggregate: orders_with_n is count()\n} -> {\n  aggregate:\n    orders is orders_with_n.sum()\n    multi_item_orders is orders_with_n.sum() { where: line_items > 1 }\n} -> {\n  select:\n    orders\n    multi_item_orders\n    multi_item_share is round(multi_item_orders / orders, 4)\n}",
+ "verifyRows": [
+  {
+   "orders": 264071,
+   "multi_item_orders": 6730,
+   "multi_item_share": 0.0255
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "three-stage: histogram of line-count per order, then sum the histogram",
+ "checkedAt": "2026-09-14"
+}

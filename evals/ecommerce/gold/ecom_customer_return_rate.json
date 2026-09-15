@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_customer_return_rate",
+ "primaryQuery": "run: order_items -> {\n  group_by: user_id\n  aggregate: returned_items is count() { where: status = 'Returned' }\n} -> {\n  aggregate:\n    customers is count()\n    customers_with_a_return is count() { where: returned_items > 0 }\n} -> {\n  select:\n    customers\n    customers_with_a_return\n    customer_return_rate is round(customers_with_a_return / customers, 6)\n}",
+ "truthRows": [
+  {
+   "customers": 133345,
+   "customers_with_a_return": 2641,
+   "customer_return_rate": 0.019806
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  aggregate:\n    customers is count(user_id)\n    customers_with_a_return is count(user_id) { where: status = 'Returned' }\n} -> {\n  select:\n    customers\n    customers_with_a_return\n    customer_return_rate is round(customers_with_a_return / customers, 6)\n}",
+ "verifyRows": [
+  {
+   "customers": 133345,
+   "customers_with_a_return": 2641,
+   "customer_return_rate": 0.019806
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "count distinct (count(user_id)) with filtered aggregate, single stage",
+ "checkedAt": "2026-09-14"
+}

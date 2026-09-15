@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_cogs_of_sold_items",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  aggregate: cogs is inventory_items.cost.sum()\n}",
+ "truthRows": [
+  {
+   "cogs": 6002288.384186427
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_many: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: oi.id is not null\n  aggregate: cogs is cost.sum()\n}",
+ "verifyRows": [
+  {
+   "cogs": 6002288.384186536
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: inventory_items join_many order_items",
+ "checkedAt": "2026-09-14"
+}

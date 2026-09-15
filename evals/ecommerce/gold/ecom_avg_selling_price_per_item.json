@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_avg_selling_price_per_item",
+ "primaryQuery": "run: order_items -> {\n  aggregate:\n    total_sales is sale_price.sum()\n    items_sold is count()\n} -> {\n  select:\n    total_sales\n    items_sold\n    avg_selling_price_per_item is round(total_sales / items_sold, 4)\n}",
+ "truthRows": [
+  {
+   "total_sales": 12566292.875474572,
+   "items_sold": 271019,
+   "avg_selling_price_per_item": 46.3668
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: status\n  aggregate:\n    s is sale_price.sum()\n    n is count()\n} -> {\n  aggregate:\n    total_sales is s.sum()\n    items_sold is n.sum()\n} -> {\n  select:\n    total_sales\n    items_sold\n    avg_selling_price_per_item is round(total_sales / items_sold, 4)\n}",
+ "verifyRows": [
+  {
+   "total_sales": 12566292.875474572,
+   "items_sold": 271019,
+   "avg_selling_price_per_item": 46.3668
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by status then re-sum numerator and denominator",
+ "checkedAt": "2026-09-14"
+}

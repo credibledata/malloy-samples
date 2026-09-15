@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_gross_margin_pct",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  aggregate:\n    total_sales is sale_price.sum()\n    total_cost is inventory_items.cost.sum()\n} -> {\n  select:\n    total_sales\n    total_cost\n    gross_margin_pct is round((total_sales - total_cost) / total_sales, 6)\n}",
+ "truthRows": [
+  {
+   "total_sales": 12566292.875474572,
+   "total_cost": 6002288.384186424,
+   "gross_margin_pct": 0.52235
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_one: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: oi.id is not null\n  aggregate:\n    total_sales is oi.sale_price.sum()\n    total_cost is cost.sum()\n} -> {\n  select:\n    total_sales\n    total_cost\n    gross_margin_pct is round((total_sales - total_cost) / total_sales, 6)\n}",
+ "verifyRows": [
+  {
+   "total_sales": 12566292.875474572,
+   "total_cost": 6002288.384187349,
+   "gross_margin_pct": 0.52235
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: inventory_items joined to order_items",
+ "checkedAt": "2026-09-14"
+}

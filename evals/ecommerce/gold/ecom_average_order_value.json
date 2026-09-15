@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_average_order_value",
+ "primaryQuery": "run: order_items -> {\n  group_by: order_id\n  aggregate: order_total is sale_price.sum()\n} -> {\n  aggregate: aov is order_total.avg()\n}",
+ "truthRows": [
+  {
+   "aov": 47.586796261136485
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  aggregate: aov is sale_price.sum() / count(order_id)\n}",
+ "verifyRows": [
+  {
+   "aov": 47.586796261136485
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "ratio of separate aggregates: sum(sale_price) / count(distinct order_id) in one stage",
+ "checkedAt": "2026-09-14"
+}

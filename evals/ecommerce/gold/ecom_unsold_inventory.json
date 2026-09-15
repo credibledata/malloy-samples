@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_unsold_inventory",
+ "primaryQuery": "run: inventory_items -> {\n  extend: { join_one: oi is order_items on id = oi.inventory_item_id }\n  where: sold_at is null or oi.status = 'Cancelled'\n  aggregate: unsold is count()\n}",
+ "truthRows": [
+  {
+   "unsold": 226427
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_one: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: sold_at is null or oi.status = 'Cancelled'\n  group_by: product_department\n  aggregate: n is count()\n} -> { aggregate: unsold is n.sum() }",
+ "verifyRows": [
+  {
+   "unsold": 226427
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by product_department then sum counts",
+ "checkedAt": "2026-09-14"
+}

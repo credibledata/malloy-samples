@@ -1,0 +1,26 @@
+{
+ "qid": "ecom_mom_largest_drop_2022",
+ "primaryQuery": "run: order_items -> {\n  where: created_at >= @2022-01-01\n  group_by: mo is created_at.month\n  aggregate: sales is sale_price.sum()\n  order_by: mo\n  calculate: prev_month_sales is lag(sales)\n} -> {\n  where: mo < @2022-11-01 and prev_month_sales != null\n  select:\n    drop_month is month(mo)\n    month_sales is sales\n    prev_month_sales\n    mom_change is round(sales - prev_month_sales, 2)\n    mom_pct is round(sales / prev_month_sales - 1, 4)\n  order_by: mom_pct asc\n  limit: 1\n}",
+ "truthRows": [
+  {
+   "drop_month": 2,
+   "month_sales": 379584.8111798763,
+   "prev_month_sales": 402800.8013192415,
+   "mom_change": -23215.99,
+   "mom_pct": -0.0576
+  }
+ ],
+ "verifyQuery": "source: monthly is order_items -> {\n  group_by: mo is created_at.month\n  aggregate: sales is sale_price.sum()\n}\nrun: monthly extend {\n  join_one: prev is monthly on prev.mo = mo - 1 month\n} -> {\n  where: mo >= @2022-02-01 and mo < @2022-11-01\n  select:\n    drop_month is month(mo)\n    month_sales is sales\n    prev_month_sales is prev.sales\n    mom_change is round(sales - prev.sales, 2)\n    mom_pct is round(sales / prev.sales - 1, 4)\n  order_by: mom_pct asc\n  limit: 1\n}",
+ "verifyRows": [
+  {
+   "drop_month": 2,
+   "month_sales": 379584.8111798763,
+   "prev_month_sales": 402800.8013192415,
+   "mom_change": -23215.99,
+   "mom_pct": -0.0576
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "self-join of a monthly query source on mo - 1 month",
+ "checkedAt": "2026-09-14"
+}

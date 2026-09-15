@@ -1,0 +1,77 @@
+{
+ "qid": "ecom_top_margin_pct_categories",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  group_by: product_category is inventory_items.product_category\n  aggregate:\n    total_sales is sale_price.sum()\n    margin_dollars is sale_price.sum() - inventory_items.cost.sum()\n} -> {\n  select:\n    product_category\n    total_sales\n    margin_dollars\n    margin_pct is round(margin_dollars / total_sales, 6)\n  order_by: margin_pct desc\n  limit: 5\n}",
+ "truthRows": [
+  {
+   "product_category": "Accessories",
+   "total_sales": 1188055.1655384302,
+   "margin_dollars": 746438.1767546186,
+   "margin_pct": 0.628286
+  },
+  {
+   "product_category": "Blazers & Jackets",
+   "total_sales": 530793.8405647278,
+   "margin_dollars": 329402.46604600886,
+   "margin_pct": 0.620585
+  },
+  {
+   "product_category": "Suits & Sport Coats",
+   "total_sales": 473358.16933727264,
+   "margin_dollars": 283290.0576860624,
+   "margin_pct": 0.598469
+  },
+  {
+   "product_category": "Skirts",
+   "total_sales": 233313.45048475266,
+   "margin_dollars": 139217.5846468266,
+   "margin_pct": 0.596698
+  },
+  {
+   "product_category": "Socks & Hosiery",
+   "total_sales": 49000.12993454933,
+   "margin_dollars": 29161.954041752015,
+   "margin_pct": 0.59514
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_one: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: oi.id is not null\n  group_by: product_category\n  aggregate:\n    total_sales is oi.sale_price.sum()\n    total_cost is cost.sum()\n} -> {\n  select:\n    product_category\n    total_sales\n    margin_dollars is total_sales - total_cost\n    margin_pct is round((total_sales - total_cost) / total_sales, 6)\n  order_by: margin_pct desc\n  limit: 5\n} -> {\n  select: product_category, total_sales, margin_dollars, margin_pct\n  calculate: rank is row_number()\n  order_by: margin_pct desc\n}",
+ "verifyRows": [
+  {
+   "product_category": "Accessories",
+   "total_sales": 1188055.1655384302,
+   "margin_dollars": 746438.1767546067,
+   "margin_pct": 0.628286,
+   "rank": 1
+  },
+  {
+   "product_category": "Blazers & Jackets",
+   "total_sales": 530793.8405647278,
+   "margin_dollars": 329402.4660460061,
+   "margin_pct": 0.620585,
+   "rank": 2
+  },
+  {
+   "product_category": "Suits & Sport Coats",
+   "total_sales": 473358.16933727264,
+   "margin_dollars": 283290.05768606125,
+   "margin_pct": 0.598469,
+   "rank": 3
+  },
+  {
+   "product_category": "Skirts",
+   "total_sales": 233313.45048475266,
+   "margin_dollars": 139217.5846468285,
+   "margin_pct": 0.596698,
+   "rank": 4
+  },
+  {
+   "product_category": "Socks & Hosiery",
+   "total_sales": 49000.12993454933,
+   "margin_dollars": 29161.95404175198,
+   "margin_pct": 0.59514,
+   "rank": 5
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: inventory_items joined to order_items; margin as sales minus separately summed cost",
+ "checkedAt": "2026-09-14"
+}

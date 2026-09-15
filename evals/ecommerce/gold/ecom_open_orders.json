@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_open_orders",
+ "primaryQuery": "run: order_items -> {\n  aggregate:\n    open_orders is count(order_id) { where: status = 'Processing' or status = 'Shipped' }\n    open_line_items is count() { where: status = 'Processing' or status = 'Shipped' }\n    undelivered_including_cancelled is count(order_id) { where: delivered_at is null }\n}",
+ "truthRows": [
+  {
+   "open_orders": 2894,
+   "open_line_items": 2954,
+   "undelivered_including_cancelled": 12176
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: order_id\n  aggregate:\n    open_items is count() { where: status = 'Processing' or status = 'Shipped' }\n    undelivered_items is count() { where: delivered_at is null }\n} -> {\n  aggregate:\n    open_orders is count() { where: open_items > 0 }\n    open_line_items is open_items.sum()\n    undelivered_including_cancelled is count() { where: undelivered_items > 0 }\n}",
+ "verifyRows": [
+  {
+   "open_orders": 2894,
+   "open_line_items": 2954,
+   "undelivered_including_cancelled": 12176
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by order_id, then count orders with any open item",
+ "checkedAt": "2026-09-14"
+}

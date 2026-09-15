@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_return_lag_after_delivery",
+ "primaryQuery": "run: order_items -> {\n  where: status = 'Returned'\n  aggregate:\n    returned_items is count()\n    returned_at_equals_created_at is count() { where: returned_at = created_at }\n    naive_days_delivered_to_returned is round(avg(days(delivered_at to returned_at::date)), 4)\n}",
+ "truthRows": [
+  {
+   "returned_items": 2672,
+   "returned_at_equals_created_at": 2672,
+   "naive_days_delivered_to_returned": -8.2949
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  where: status = 'Returned'\n  group_by: ret_month is returned_at.month\n  aggregate:\n    n is count()\n    n_same is count() { where: returned_at = created_at }\n    n_with_delivery is count() { where: delivered_at is not null }\n    gap_days is sum(days(delivered_at to returned_at::date))\n} -> {\n  aggregate:\n    returned_items is n.sum()\n    returned_at_equals_created_at is n_same.sum()\n    total_gap is gap_days.sum()\n    n_del is n_with_delivery.sum()\n} -> {\n  select:\n    returned_items\n    returned_at_equals_created_at\n    naive_days_delivered_to_returned is round(total_gap / n_del, 4)\n}",
+ "verifyRows": [
+  {
+   "returned_items": 2672,
+   "returned_at_equals_created_at": 2672,
+   "naive_days_delivered_to_returned": -8.2949
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by return month, sum day-gaps and counts, derive weighted mean",
+ "checkedAt": "2026-09-14"
+}

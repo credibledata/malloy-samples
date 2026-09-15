@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_new_customers_2022",
+ "primaryQuery": "run: order_items -> {\n  group_by: user_id\n  aggregate: first_order is min(created_at)\n} -> {\n  where: year(first_order) = 2022\n  aggregate: new_customers is count()\n}",
+ "truthRows": [
+  {
+   "new_customers": 47554
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: user_id\n  aggregate:\n    prior_lines is count() { where: created_at < @2022-01-01 }\n    lines_2022 is count() { where: created_at >= @2022-01-01 and created_at < @2023-01-01 }\n} -> {\n  where: lines_2022 > 0 and prior_lines = 0\n  aggregate: new_customers is count()\n}",
+ "verifyRows": [
+  {
+   "new_customers": 47554
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "complement: 2022 buyers with zero pre-2022 lines",
+ "checkedAt": "2026-09-14"
+}

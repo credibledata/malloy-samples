@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_2022_sales_casual",
+ "primaryQuery": "run: order_items -> {\n  where: year(created_at) = 2022\n  aggregate: total_sales is sale_price.sum()\n}",
+ "truthRows": [
+  {
+   "total_sales": 4744743.446900487
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  where: created_at ? @2022\n  group_by: mo is created_at.month\n  aggregate: monthly_sales is sale_price.sum()\n} -> { aggregate: total_sales is monthly_sales.sum() }",
+ "verifyRows": [
+  {
+   "total_sales": 4744743.446900487
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by month then sum",
+ "checkedAt": "2026-09-14"
+}

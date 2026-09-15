@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_lifetime_spend",
+ "primaryQuery": "run: order_items -> {\n  where: status != 'Cancelled' and status != 'Returned'\n  aggregate: lifetime_spend is sale_price.sum()\n}",
+ "truthRows": [
+  {
+   "lifetime_spend": 11997832.203328729
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  aggregate:\n    all_sales is sale_price.sum()\n    cancelled is sale_price.sum() { where: status = 'Cancelled' }\n    returned is sale_price.sum() { where: status = 'Returned' }\n} -> { select: lifetime_spend is all_sales - cancelled - returned }",
+ "verifyRows": [
+  {
+   "lifetime_spend": 11997832.203328729
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "complement filter: total minus cancelled minus returned",
+ "checkedAt": "2026-09-14"
+}
