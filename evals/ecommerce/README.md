@@ -36,6 +36,37 @@ Every golden was derived two ways before it was written, and the check earned it
 own reference answers were wrong more than once. What authoring found wrong in the model went into
 the model (see `ecommerce/ecommerce.malloy`'s history), not into a file beside the goldens.
 
+## The definition ledger
+
+`../definitions/ecommerce.jsonl` is a record per measure and dimension in the model,
+built by Publisher's `verify_definitions.py`. Each one is checked against the layer
+directly beneath it -- a measure against its own stated expression, through the
+model -- and every case that depends on it inherits the result. Two records carry an
+**authored control**, a population assertion a person wrote after reading the docs:
+
+- `total_sales`: the model sums every line; `status`'s own doc says Cancelled lines
+  "are not sales". Control against the model, **disagrees** (12566292.88 vs
+  12119909.43).
+- `total_gross_margin`: same population error, control against `ecommerce-truth`,
+  **disagrees** (6564004.49 vs 6331165.10).
+
+Both disagreements are left standing on purpose. The model contradicts its own
+documentation, this set's goldens were derived from raw tables with the right
+population and do not depend on the model's definitions being right, and the ledger
+is how the loop keeps saying so on every rebuild instead of once in someone's head.
+A rebuild keeps the authored controls and re-runs them:
+
+```bash
+python3 $S/eval-answer/scripts/verify_definitions.py \
+  --model <samples>/ecommerce/ecommerce.malloy --ledger <samples>/evals/definitions/ecommerce.jsonl \
+  --publisher http://localhost:4811 --environment samples --package ecommerce --model-path ecommerce.malloy \
+  --truth-publisher http://localhost:4812 --truth-package ecommerce-truth
+```
+
+Hand it to a run with `run_baseline.py --definitions`, and to the golden audit with
+`verify_goldens.py --definitions`, which then accepts the set without a truth server
+when every value-bearing case rests on validated definitions.
+
 ## Running it
 
 You need a checkout of `malloydata/publisher` with a build (`packages/server/dist/server.mjs`) and
