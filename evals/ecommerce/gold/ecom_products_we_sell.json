@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_products_we_sell",
+ "primaryQuery": "run: products -> {\n  aggregate: catalog_products is count(id)\n}",
+ "truthRows": [
+  {
+   "catalog_products": 29120
+  }
+ ],
+ "verifyQuery": "run: products -> {\n  group_by: category\n  aggregate: n is count()\n} -> { aggregate: catalog_products is n.sum() }",
+ "verifyRows": [
+  {
+   "catalog_products": 29120
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by category then sum of row counts",
+ "checkedAt": "2026-09-14"
+}

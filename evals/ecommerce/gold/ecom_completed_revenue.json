@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_completed_revenue",
+ "primaryQuery": "run: order_items -> {\n  where: status = 'Complete'\n  aggregate: total_sales is sale_price.sum()\n}",
+ "truthRows": [
+  {
+   "total_sales": 11865343.562779665
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  aggregate: total_sales is sale_price.sum() - sale_price.sum() { where: status != 'Complete' }\n}",
+ "verifyRows": [
+  {
+   "total_sales": 11865343.562779665
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "complement filter: all sales minus non-Complete sales",
+ "checkedAt": "2026-09-14"
+}

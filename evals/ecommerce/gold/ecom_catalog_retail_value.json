@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_catalog_retail_value",
+ "primaryQuery": "run: products -> {\n  aggregate: catalog_retail_value is retail_price.sum()\n}",
+ "truthRows": [
+  {
+   "catalog_retail_value": 1724491.1717701145
+  }
+ ],
+ "verifyQuery": "run: products -> {\n  group_by: category\n  aggregate: cat_value is retail_price.sum()\n} -> { aggregate: catalog_retail_value is cat_value.sum() }",
+ "verifyRows": [
+  {
+   "catalog_retail_value": 1724491.1717701145
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by category then sum",
+ "checkedAt": "2026-09-14"
+}

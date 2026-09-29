@@ -1,0 +1,57 @@
+{
+ "qid": "ecom_top_categories",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  top: 5\n  group_by: inventory_items.product_category\n  aggregate: total_sales is sale_price.sum()\n}",
+ "truthRows": [
+  {
+   "product_category": "Jeans",
+   "total_sales": 1954096.7582769394
+  },
+  {
+   "product_category": "Accessories",
+   "total_sales": 1188055.1655384302
+  },
+  {
+   "product_category": "Outerwear & Coats",
+   "total_sales": 1030314.0306396484
+  },
+  {
+   "product_category": "Fashion Hoodies & Sweatshirts",
+   "total_sales": 927357.9697036743
+  },
+  {
+   "product_category": "Tops & Tees",
+   "total_sales": 853747.7683193684
+  }
+ ],
+ "verifyQuery": "run: order_items extend {\n  join_one: inventory_items on inventory_item_id = inventory_items.id\n  join_one: products on inventory_items.product_id = products.id\n} -> {\n  top: 5\n  group_by: product_category is products.category\n  aggregate: total_sales is sale_price.sum()\n  order_by: total_sales desc\n  calculate: rank is row_number()\n}",
+ "verifyRows": [
+  {
+   "product_category": "Jeans",
+   "total_sales": 1954096.7582769394,
+   "rank": 1
+  },
+  {
+   "product_category": "Accessories",
+   "total_sales": 1188055.1655384302,
+   "rank": 2
+  },
+  {
+   "product_category": "Outerwear & Coats",
+   "total_sales": 1030314.0306396484,
+   "rank": 3
+  },
+  {
+   "product_category": "Fashion Hoodies & Sweatshirts",
+   "total_sales": 927357.9697036743,
+   "rank": 4
+  },
+  {
+   "product_category": "Tops & Tees",
+   "total_sales": 853747.7683193684,
+   "rank": 5
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "category via products table join (products.category), explicit order_by plus row_number rank",
+ "checkedAt": "2026-09-14"
+}

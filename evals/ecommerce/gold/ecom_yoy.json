@@ -1,0 +1,28 @@
+{
+ "qid": "ecom_yoy",
+ "primaryQuery": "run: order_items -> {\n  aggregate:\n    sales_2021 is sale_price.sum() { where: year(created_at) = 2021 }\n    sales_2022 is sale_price.sum() { where: year(created_at) = 2022 }\n    ytd_2021_to_nov14 is sale_price.sum() { where: created_at >= @2021-01-01 and created_at < @2021-11-15 }\n    window_end is max(created_at)::date\n} -> {\n  select:\n    sales_2021\n    sales_2022\n    ytd_2021_to_nov14\n    window_end\n    naive_yoy is round(sales_2022 / sales_2021 - 1, 4)\n    comparable_yoy is round(sales_2022 / ytd_2021_to_nov14 - 1, 4)\n}",
+ "truthRows": [
+  {
+   "sales_2021": 3900910.8143820763,
+   "sales_2022": 4744743.446900487,
+   "ytd_2021_to_nov14": 3273313.4820632935,
+   "window_end": "2022-11-14T00:00:00.000Z",
+   "naive_yoy": 0.2163,
+   "comparable_yoy": 0.4495
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: yr is year(created_at)\n  aggregate:\n    sales is sale_price.sum()\n    to_nov14 is sale_price.sum() { where: created_at < @2021-11-15 }\n    last_at is max(created_at)\n} -> {\n  aggregate:\n    sales_2021 is sales.sum() { where: yr = 2021 }\n    sales_2022 is sales.sum() { where: yr = 2022 }\n    ytd_2021_to_nov14 is to_nov14.sum() { where: yr = 2021 }\n    window_end is max(last_at)::date\n} -> {\n  select:\n    sales_2021\n    sales_2022\n    ytd_2021_to_nov14\n    window_end\n    naive_yoy is round(sales_2022 / sales_2021 - 1, 4)\n    comparable_yoy is round(sales_2022 / ytd_2021_to_nov14 - 1, 4)\n}",
+ "verifyRows": [
+  {
+   "sales_2021": 3900910.8143820763,
+   "sales_2022": 4744743.446900487,
+   "ytd_2021_to_nov14": 3273313.4820632935,
+   "window_end": "2022-11-14T00:00:00.000Z",
+   "naive_yoy": 0.2163,
+   "comparable_yoy": 0.4495
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by year then filtered re-sum",
+ "checkedAt": "2026-09-14"
+}

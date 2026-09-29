@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_top_customer_count",
+ "primaryQuery": "run: order_items -> {\n  group_by: user_id\n  aggregate: orders is count(order_id)\n} -> {\n  aggregate: top_customers is count() { where: orders > 10 }\n}",
+ "truthRows": [
+  {
+   "top_customers": 87
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: user_id, order_id\n} -> {\n  group_by: user_id\n  aggregate: orders is count()\n} -> {\n  aggregate: top_customers is count() { where: orders > 10 }\n}",
+ "verifyRows": [
+  {
+   "top_customers": 87
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "count distinct via group_by (user_id, order_id) pairs then count rows per user, then filtered count",
+ "checkedAt": "2026-09-14"
+}

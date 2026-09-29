@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_returned_orders_count",
+ "primaryQuery": "run: order_items -> {\n  group_by: order_id\n  aggregate:\n    lines is count()\n    returned_lines is count() { where: status = 'Returned' }\n} -> {\n  aggregate:\n    returned_orders is count() { where: returned_lines > 0 }\n    fully_returned_orders is count() { where: returned_lines = lines }\n    partially_returned_orders is count() { where: returned_lines > 0 and returned_lines < lines }\n}",
+ "truthRows": [
+  {
+   "returned_orders": 2662,
+   "fully_returned_orders": 2536,
+   "partially_returned_orders": 126
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: order_id, status\n  aggregate: n is count()\n} -> {\n  group_by: order_id\n  aggregate:\n    distinct_statuses is count()\n    returned_status_rows is count() { where: status = 'Returned' }\n} -> {\n  aggregate:\n    returned_orders is count() { where: returned_status_rows > 0 }\n    fully_returned_orders is count() { where: returned_status_rows > 0 and distinct_statuses = 1 }\n    partially_returned_orders is count() { where: returned_status_rows > 0 and distinct_statuses > 1 }\n}",
+ "verifyRows": [
+  {
+   "returned_orders": 2662,
+   "fully_returned_orders": 2536,
+   "partially_returned_orders": 126
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "group by (order_id, status) then count distinct statuses per order",
+ "checkedAt": "2026-09-14"
+}

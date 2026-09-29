@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_return_share_of_delivered",
+ "primaryQuery": "run: order_items -> {\n  aggregate:\n    returned_items is count() { where: status = 'Returned' }\n    delivered_items is count() { where: delivered_at is not null }\n} -> {\n  select:\n    returned_items\n    delivered_items\n    return_share_of_delivered is round(returned_items / delivered_items, 6)\n}",
+ "truthRows": [
+  {
+   "returned_items": 2672,
+   "delivered_items": 258555,
+   "return_share_of_delivered": 0.010334
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: status\n  aggregate: n is count(), d is count() { where: delivered_at is not null }\n} -> {\n  aggregate:\n    returned_items is n.sum() { where: status = 'Returned' }\n    delivered_items is d.sum()\n} -> {\n  select: returned_items, delivered_items, return_share_of_delivered is round(returned_items / delivered_items, 6)\n}",
+ "verifyRows": [
+  {
+   "returned_items": 2672,
+   "delivered_items": 258555,
+   "return_share_of_delivered": 0.010334
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by status, then re-aggregate counts",
+ "checkedAt": "2026-09-14"
+}

@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_repeat_customer_rate",
+ "primaryQuery": "run: order_items -> {\n  group_by: user_id\n  aggregate: orders is count(order_id)\n} -> {\n  aggregate:\n    buyers is count()\n    repeat_customers is count() { where: orders > 1 }\n} -> {\n  select:\n    buyers\n    repeat_customers\n    repeat_rate is round(repeat_customers / buyers, 4)\n}",
+ "truthRows": [
+  {
+   "buyers": 133345,
+   "repeat_customers": 65037,
+   "repeat_rate": 0.4877
+  }
+ ],
+ "verifyQuery": "run: users extend {\n  join_many: oi is order_items on id = oi.user_id\n} -> {\n  group_by: id\n  aggregate: orders is count(oi.order_id)\n} -> {\n  where: orders > 0\n  aggregate: buyers is count(), single_buyers is count() { where: orders = 1 }\n} -> {\n  select:\n    buyers\n    repeat_customers is buyers - single_buyers\n    repeat_rate is round((buyers - single_buyers) / buyers, 4)\n}",
+ "verifyRows": [
+  {
+   "buyers": 133345,
+   "repeat_customers": 65037,
+   "repeat_rate": 0.4877
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: users joined to order_items; repeat customers derived as complement (buyers minus single-order buyers)",
+ "checkedAt": "2026-09-14"
+}

@@ -4,3 +4,8 @@ node_modules
 .DS_Store
 tmp
 *.tsv.gz
+
+# Local Publisher scratch: a served snapshot copy and its state DB.
+publisher_data/
+publisher.db
+publisher.db.wal

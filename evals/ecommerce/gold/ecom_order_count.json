@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_order_count",
+ "primaryQuery": "run: order_items -> {\n  aggregate: order_count is count(order_id)\n}",
+ "truthRows": [
+  {
+   "order_count": 264071
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: order_id\n} -> { aggregate: order_count is count() }",
+ "verifyRows": [
+  {
+   "order_count": 264071
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "group by order_id then count rows",
+ "checkedAt": "2026-09-14"
+}

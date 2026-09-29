@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_customer_lifetime_value",
+ "primaryQuery": "run: order_items -> {\n  aggregate:\n    average_lifetime_value is\n      sale_price.sum() { where: status != 'Cancelled' and status != 'Returned' }\n      / nullif(count(user_id), 0)\n}",
+ "truthRows": [
+  {
+   "average_lifetime_value": 89.97586863645978
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: user_id\n  aggregate: ltv is sale_price.sum() { where: status != 'Cancelled' and status != 'Returned' }\n} -> {\n  aggregate: average_lifetime_value is ltv.sum() / count()\n}",
+ "verifyRows": [
+  {
+   "average_lifetime_value": 89.97586863645978
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: per-user filtered spend then total / user count",
+ "checkedAt": "2026-09-14"
+}

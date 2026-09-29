@@ -1,0 +1,20 @@
+{
+ "qid": "ecom_time_to_ship",
+ "primaryQuery": "run: order_items -> {\n  where: shipped_at is not null\n  aggregate:\n    shipped_lines is count()\n    avg_days_to_ship is round(avg(day(created_at::date to shipped_at::date)), 4)\n}",
+ "truthRows": [
+  {
+   "shipped_lines": 260282,
+   "avg_days_to_ship": 3.492
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  where: shipped_at is not null\n  group_by: yr is created_at.year\n  aggregate:\n    n is count()\n    gap is sum(day(created_at::date to shipped_at::date))\n} -> {\n  aggregate:\n    shipped_lines is n.sum()\n    total_gap is gap.sum()\n} -> {\n  select:\n    shipped_lines\n    avg_days_to_ship is round(total_gap / shipped_lines, 4)\n}",
+ "verifyRows": [
+  {
+   "shipped_lines": 260282,
+   "avg_days_to_ship": 3.492
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by order year, sum gaps and counts, derive weighted mean",
+ "checkedAt": "2026-09-14"
+}

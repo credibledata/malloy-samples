@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_delivery_time_trend_2022",
+ "primaryQuery": "run: order_items -> {\n  where: delivered_at is not null\n  group_by: order_year is year(created_at)\n  aggregate: avg_days_to_deliver is round(avg(days(created_at::date to delivered_at)), 3)\n  order_by: order_year\n  calculate: prior_year_days is lag(avg_days_to_deliver)\n} -> {\n  where: order_year = 2022\n  select:\n    avg_days_2022 is avg_days_to_deliver\n    avg_days_2021 is prior_year_days\n    yoy_change_days is round(avg_days_to_deliver - prior_year_days, 3)\n}",
+ "truthRows": [
+  {
+   "avg_days_2022": 8.27,
+   "avg_days_2021": 8.308,
+   "yoy_change_days": -0.038
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  where: delivered_at is not null\n  aggregate:\n    avg_days_2022 is round(avg(days(created_at::date to delivered_at)) { where: year(created_at) = 2022 }, 3)\n    avg_days_2021 is round(avg(days(created_at::date to delivered_at)) { where: year(created_at) = 2021 }, 3)\n} -> {\n  select:\n    avg_days_2022\n    avg_days_2021\n    yoy_change_days is round(avg_days_2022 - avg_days_2021, 3)\n}",
+ "verifyRows": [
+  {
+   "avg_days_2022": 8.27,
+   "avg_days_2021": 8.308,
+   "yoy_change_days": -0.038
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "filtered aggregates per year in one stage, no window",
+ "checkedAt": "2026-09-14"
+}

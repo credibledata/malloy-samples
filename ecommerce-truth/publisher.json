@@ -1,0 +1,5 @@
+{
+    "name": "ecommerce-truth",
+    "version": "1.0.0",
+    "description": "Semantics-free sources over the ecommerce parquet files, for computing golden values. NOT the model under test - never point an answerer at this package."
+}

@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_shipped_item_share",
+ "primaryQuery": "run: order_items -> {\n  aggregate:\n    shipped_items is count() { where: shipped_at is not null }\n    total_items is count()\n} -> {\n  select:\n    shipped_items\n    total_items\n    shipped_share is round(shipped_items / total_items, 6)\n}",
+ "truthRows": [
+  {
+   "shipped_items": 260282,
+   "total_items": 271019,
+   "shipped_share": 0.960383
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  aggregate:\n    total_items is count()\n    shipped_items is count() - count() { where: shipped_at is null }\n} -> {\n  select: shipped_items, total_items, shipped_share is round(shipped_items / total_items, 6)\n}",
+ "verifyRows": [
+  {
+   "shipped_items": 260282,
+   "total_items": 271019,
+   "shipped_share": 0.960383
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "complement filter: shipped = total minus items with null shipped_at",
+ "checkedAt": "2026-09-14"
+}

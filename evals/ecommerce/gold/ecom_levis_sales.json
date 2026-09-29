@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_levis_sales",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  where: inventory_items.product_brand = 'Levi\\'s'\n  aggregate: total_sales is sale_price.sum()\n}",
+ "truthRows": [
+  {
+   "total_sales": 1772930.9405975342
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_one: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: product_brand = 'Levi\\'s'\n  aggregate: total_sales is oi.sale_price.sum()\n}",
+ "verifyRows": [
+  {
+   "total_sales": 1772930.9405975342
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: inventory_items joined to order_items, sum oi.sale_price",
+ "checkedAt": "2026-09-14"
+}

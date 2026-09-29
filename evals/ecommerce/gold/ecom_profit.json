@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_profit",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  aggregate: total_gross_margin is sale_price.sum() - inventory_items.cost.sum()\n}",
+ "truthRows": [
+  {
+   "total_gross_margin": 6564004.491288207
+  }
+ ],
+ "verifyQuery": "run: order_items extend {\n  join_one: inventory_items on inventory_item_id = inventory_items.id\n} -> {\n  group_by: inventory_items.product_category\n  aggregate: margin is sale_price.sum() - inventory_items.cost.sum()\n} -> {\n  aggregate: total_gross_margin is margin.sum()\n}",
+ "verifyRows": [
+  {
+   "total_gross_margin": 6564004.49128926
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: margin per product_category then sum",
+ "checkedAt": "2026-09-14"
+}

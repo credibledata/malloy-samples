@@ -1,0 +1,36 @@
+{
+ "qid": "ecom_orders_per_top_category",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  top: 3\n  group_by: product_category is inventory_items.product_category\n  aggregate: orders is count(order_id)\n  order_by: orders desc\n}",
+ "truthRows": [
+  {
+   "product_category": "Accessories",
+   "orders": 32801
+  },
+  {
+   "product_category": "Jeans",
+   "orders": 31194
+  },
+  {
+   "product_category": "Tops & Tees",
+   "orders": 26352
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_many: oi is order_items on id = oi.inventory_item_id\n} -> {\n  top: 3\n  group_by: product_category\n  aggregate: orders is count(oi.order_id)\n  order_by: orders desc\n}",
+ "verifyRows": [
+  {
+   "product_category": "Accessories",
+   "orders": 32801
+  },
+  {
+   "product_category": "Jeans",
+   "orders": 31194
+  },
+  {
+   "product_category": "Tops & Tees",
+   "orders": 26352
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: inventory_items join_many order_items",
+ "checkedAt": "2026-09-14"
+}

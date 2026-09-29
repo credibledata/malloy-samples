@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_distinct_products_sold",
+ "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  aggregate: products_sold is count(inventory_items.product_id)\n}",
+ "truthRows": [
+  {
+   "products_sold": 18190
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_one: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: oi.id is not null\n  group_by: product_id\n} -> { aggregate: products_sold is count() }",
+ "verifyRows": [
+  {
+   "products_sold": 18190
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "driver source: inventory_items joined to order_items; count distinct via group_by product_id then count rows",
+ "checkedAt": "2026-09-14"
+}

@@ -1,0 +1,19 @@
+{
+  "qid": "ecom_cogs_of_sold_items",
+  "primaryQuery": "run: order_items extend {\n  join_one: inventory_items is inventory_items\n    on inventory_item_id = inventory_items.id\n} -> {\n  where: status != 'Cancelled'\n  aggregate: cogs is inventory_items.cost.sum()\n}",
+  "truthRows": [
+    {
+      "cogs": 5788744.3325769575
+    }
+  ],
+  "verifyQuery": "run: inventory_items extend {\n  join_many: oi is order_items on id = oi.inventory_item_id\n} -> {\n  where: oi.id is not null and oi.status != 'Cancelled'\n  aggregate: cogs is cost.sum()\n}",
+  "verifyRows": [
+    {
+      "cogs": 5788744.332576918
+    }
+  ],
+  "agreement": true,
+  "variesAxis": "driver source: inventory_items join_many order_items",
+  "checkedAt": "2026-09-14",
+  "note": "Both derivations exclude Cancelled, per status's own doc and units_sold. They agree to 10 significant figures across opposite join directions; the difference is float association, as before."
+}

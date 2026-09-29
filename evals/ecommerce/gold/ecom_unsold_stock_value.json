@@ -1,0 +1,20 @@
+{
+ "qid": "ecom_unsold_stock_value",
+ "primaryQuery": "run: inventory_items -> {\n  extend: { join_one: oi is order_items on id = oi.inventory_item_id }\n  where: sold_at is null or oi.status = 'Cancelled'\n  aggregate:\n    unsold_units is count()\n    unsold_at_cost is round(cost.sum(), 2)\n}",
+ "truthRows": [
+  {
+   "unsold_units": 226427,
+   "unsold_at_cost": 5075642.75
+  }
+ ],
+ "verifyQuery": "run: inventory_items extend {\n  join_one: oi is order_items on id = oi.inventory_item_id\n} -> {\n  aggregate:\n    all_units is count()\n    sold_units is count() { where: sold_at is not null and coalesce(oi.status, '') != 'Cancelled' }\n    all_cost is cost.sum()\n    sold_cost is cost.sum() { where: sold_at is not null and coalesce(oi.status, '') != 'Cancelled' }\n} -> {\n  select:\n    unsold_units is all_units - sold_units\n    unsold_at_cost is round(all_cost - sold_cost, 2)\n}",
+ "verifyRows": [
+  {
+   "unsold_units": 226427,
+   "unsold_at_cost": 5075642.75
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "complement filter: all inventory minus items sold with a non-cancelled order",
+ "checkedAt": "2026-09-14"
+}

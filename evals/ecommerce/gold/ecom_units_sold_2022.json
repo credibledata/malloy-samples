@@ -1,0 +1,22 @@
+{
+ "qid": "ecom_units_sold_2022",
+ "primaryQuery": "run: order_items -> {\n  where: year(created_at) = 2022\n  aggregate:\n    units_sold is count() { where: status != 'Cancelled' }\n    all_2022_lines is count()\n    cancelled_2022_lines is count() { where: status = 'Cancelled' }\n}",
+ "truthRows": [
+  {
+   "units_sold": 98703,
+   "all_2022_lines": 102274,
+   "cancelled_2022_lines": 3571
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  where: created_at >= @2022-01-01 and created_at < @2023-01-01\n  group_by: status\n  aggregate: n is count()\n} -> {\n  aggregate:\n    all_2022_lines is n.sum()\n    cancelled_2022_lines is n.sum() { where: status = 'Cancelled' }\n} -> {\n  select:\n    units_sold is all_2022_lines - cancelled_2022_lines\n    all_2022_lines\n    cancelled_2022_lines\n}",
+ "verifyRows": [
+  {
+   "units_sold": 98703,
+   "all_2022_lines": 102274,
+   "cancelled_2022_lines": 3571
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage by status; units_sold as complement (all minus cancelled)",
+ "checkedAt": "2026-09-14"
+}

@@ -1,0 +1,18 @@
+{
+ "qid": "ecom_return_rate",
+ "primaryQuery": "run: order_items -> {\n  aggregate:\n    item_return_rate is count() { where: status = 'Returned' } / nullif(count(), 0)\n}",
+ "truthRows": [
+  {
+   "item_return_rate": 0.009859087370258174
+  }
+ ],
+ "verifyQuery": "run: order_items -> {\n  group_by: status\n  aggregate: n is count()\n} -> {\n  aggregate:\n    returned is n.sum() { where: status = 'Returned' }\n    total is n.sum()\n} -> {\n  select: item_return_rate is returned / total\n}",
+ "verifyRows": [
+  {
+   "item_return_rate": 0.009859087370258174
+  }
+ ],
+ "agreement": true,
+ "variesAxis": "two-stage: group by status, ratio of re-summed counts",
+ "checkedAt": "2026-09-14"
+}
