@@ -1,0 +1,81 @@
+##| artifact { layout=linear title="Nested Subtotals"
+  tiles=[
+    text_1 { kind=text },
+    text_2 { kind=text },
+    "order_items_tiles -> tile_1",
+    text_3 { kind=text },
+    "order_items_tiles -> tile_2",
+    text_4 { kind=text },
+    "order_items_tiles -> tile_3",
+    text_5 { kind=text }
+  ]
+}
+|##
+##|(markdown) text_1
+# Nested Subtotals
+
+Nested subtotals are quite painful to do in SQL, requiring either self-joins, window functions, or `GROUP BY ROLLUP` queries. Unfortunately for analysts, it's also a very common type of analysis requested by business owners; for example, determing which segments of a population drove revenue growth, or drilling down from annual numbers into more granular time periods, like quarters or months.
+
+To see how we do this in Malloy, let's look at the following simple model:
+|##
+
+source: order_items is duckdb.table('data/order_items.parquet') extend {
+  primary_key: id
+
+  measure:
+    total_sales is sale_price.sum()
+}
+
+##|(markdown) text_2
+This contains a single table of order items, and a measure to calculate sales. We can use this to calculate sales by year:
+|##
+
+##|(markdown) text_3
+Now suppose we want to drill into the sales numbers by quarter. To do this in SQL would require either a window function, a self-join, or a `GROUP BY ROLLUP`, all of which are complicated to implement, and produce results that are difficult to interpret. In Malloy, none of this is necessary, we simply use a `nest` clause:
+|##
+
+##|(markdown) text_4
+To drill down even further, it's trivial to repeat this pattern once again. The following query looks at the top 5 sales days for each fiscal quarter
+|##
+
+##|(markdown) text_5
+These queries are trivial to implement, and easy to understand. If you'd like a challenge, try implementing the same thing in SQL and see what it looks like.
+|##
+
+source: order_items_tiles is order_items extend {
+  view: tile_1 is {
+    group_by: fiscal_year is created_at.year
+    aggregate: total_sales
+    order_by: fiscal_year desc
+  }
+
+  view: tile_2 is {
+    group_by: fiscal_year is created_at.year
+    aggregate: total_sales
+    order_by: fiscal_year desc
+
+    nest: by_quarter is {
+      group_by: fiscal_quarter is created_at.quarter
+      aggregate: total_sales
+      order_by: fiscal_quarter 
+    }
+  }
+
+  view: tile_3 is {
+    group_by: fiscal_year is created_at.year
+    aggregate: total_sales
+    order_by: fiscal_year desc
+
+    nest: by_quarter is  {
+      group_by: fiscal_quarter is created_at.quarter
+      aggregate: total_sales
+      order_by: fiscal_quarter 
+
+      nest: top_days is  {
+        group_by: sale_date is created_at.day
+        aggregate: total_sales
+        limit: 5
+      }
+    }
+  }
+}

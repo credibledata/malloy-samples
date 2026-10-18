@@ -1,0 +1,168 @@
+##| artifact { layout=linear title="Comparing Sample SQL Queries to Malloy"
+  tiles=[
+    text_1 { kind=text },
+    "events_tiles -> tile_1",
+    text_2 { kind=text },
+    "events_tiles -> tile_2",
+    text_3 { kind=text },
+    "purchase_events_tiles -> tile_3",
+    text_4 { kind=text },
+    "purchase_events_tiles -> tile_4",
+    text_5 { kind=text }
+  ]
+}
+|##
+##|(markdown) text_1
+# Comparing Sample SQL Queries to Malloy
+
+Google provides some [sample SQL queries](https://developers.google.com/analytics/bigquery/basic-queries) to help you analyze the GA4 export in BigQuery.
+
+Question 1: Count the unique events by date and event name for a specific period of days, and selected events.
+
+SQL query:
+
+```sql
+SELECT
+  event_date,
+  event_name,
+  COUNT(*) AS event_count
+FROM
+  `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+WHERE
+  event_name IN ('page_view', 'session_start', 'purchase')
+  AND _TABLE_SUFFIX BETWEEN '20201201' AND '20201202'
+GROUP BY 1, 2;
+```
+
+Malloy:
+|##
+
+import './ga4.malloy'
+
+##|(markdown) text_2
+Question 2: Get 'Total User' count and 'New User' count.
+
+SQL query:
+
+```sql
+WITH
+  UserInfo AS (
+    SELECT
+      user_pseudo_id,
+      MAX(IF(event_name IN ('first_visit', 'first_open'), 1, 0)) AS is_new_user
+    FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+    WHERE _TABLE_SUFFIX BETWEEN '20201101' AND '20201130'
+    GROUP BY 1
+  )
+SELECT
+  COUNT(*) AS user_count,
+  SUM(is_new_user) AS new_user_count
+FROM UserInfo;
+```
+
+Malloy:
+|##
+
+##|(markdown) text_3
+Question 3: Get the total event values for all 'purchase' events
+
+```sql
+SELECT
+  SUM(
+    (
+      SELECT COALESCE(value.int_value, value.float_value, value.double_value)
+      FROM UNNEST(event_params)
+      WHERE key = 'value'
+    ))
+    AS event_value
+FROM
+  `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+WHERE
+  event_name = 'purchase'
+  AND _TABLE_SUFFIX BETWEEN '20201201' AND '20201202';
+```
+
+Malloy:
+|##
+
+##|(markdown) text_4
+Question 4: Get the average amount of money spent per purchase session by user.
+
+SQL:
+
+```sql
+SELECT
+  user_pseudo_id,
+  COUNT(
+    DISTINCT(SELECT EP.value.int_value FROM UNNEST(event_params) AS EP WHERE key = 'ga_session_id'))
+    AS session_count,
+  AVG(
+    (
+      SELECT COALESCE(EP.value.int_value, EP.value.float_value, EP.value.double_value)
+      FROM UNNEST(event_params) AS EP
+      WHERE key = 'value'
+    )) AS avg_spend_per_session_by_user,
+FROM
+  `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+WHERE
+  event_name = 'purchase'
+  AND _TABLE_SUFFIX BETWEEN '20201101' AND '20210131'
+GROUP BY
+  1;
+```
+
+Malloy:
+|##
+
+##|(markdown) text_5
+More examples of SQL vs Malloy can be found in the `./sample_queries.malloy` file in this directory.
+|##
+
+source: events_tiles is events extend {
+  view: tile_1 is {
+    group_by:
+      event_date
+      event_name
+
+    aggregate:
+      event_count is count()
+
+    where:
+      (event_name ? 'page_view' | 'session_start' | 'purchase')
+      and event_timestamp.day ? @2020-12-01 to @2020-12-03
+  }
+
+  view: tile_2 is {
+    group_by: user_pseudo_id
+    aggregate: is_new_user
+    where: event_timestamp.day ? @2020-11-01 to @2020-12-01
+  } -> {
+    aggregate:
+      user_count is count()
+      new_user_count is sum(is_new_user)
+  }
+}
+
+source: purchase_events_tiles is purchase_events extend {
+  view: tile_3 is {
+    aggregate:
+      total_spend
+
+    where:
+      (event_timestamp.day ? @2020-12-01 to @2020-12-03)
+  }
+
+  view: tile_4 is {
+    group_by:
+      user_pseudo_id
+
+    aggregate:
+      session_count
+      avg_spend_per_session is total_spend / nullif(session_count, 0)
+
+    where:
+      event_timestamp.day ? @2020-11-01 to @2021-02-01
+
+    order_by: 1
+  }
+}

@@ -1,0 +1,47 @@
+##| artifact { layout=linear title="IMDB Analysis in Malloy"
+  tiles=[
+    text_1 { kind=text },
+    text_2 { kind=text },
+    "movies_tiles -> tile_1",
+    text_3 { kind=text },
+    "movies_tiles -> tile_2"
+  ]
+}
+|##
+##|(markdown) text_1
+# IMDB Analysis in Malloy
+|##
+
+import {movies} from "./imdb.malloy"
+
+##|(markdown) text_2
+## Analyze Titles
+Uncomment the clauses below to see different kinds of analysis that can be applied to Titles
+|##
+
+##|(markdown) text_3
+## Analyze People
+Uncomment any of the clauses below to see different ways of analysing people in the movie industry.
+|##
+
+source: movies_tiles is movies extend {
+  view: tile_1 is by_title + { 
+    limit: 20 
+    -- where: genre2 = 'Horror'
+    -- # list
+    -- nest: by_name
+    -- # list
+    -- nest: by_genre
+  }
+
+  -- # dashboard
+  view: tile_2 is by_name + { 
+    -- limit: 20 
+    -- where: job = 'director'
+    -- nest: title_list
+    -- nest: job_list
+    -- nest: movie_grid
+    -- nest: genre_and_time
+    -- nest: works_with
+  }
+}

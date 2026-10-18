@@ -1,0 +1,86 @@
+##! experimental.givens
+##| artifact { layout=linear title="Automobile Recalls"
+  tiles=[
+    text_1 { kind=text },
+    text_2 { kind=text },
+    "recalls_tiles -> tile_1",
+    text_3 { kind=text },
+    "recalls_tiles -> tile_2",
+    text_4 { kind=text },
+    "recalls_tiles -> tile_3",
+    text_5 { kind=text },
+    "recalls_tiles -> tile_4",
+    text_6 { kind=text },
+    "recalls_tiles -> tile_5",
+    text_7 { kind=text },
+    "recalls_tiles -> tile_6"
+  ]
+}
+|##
+##|(markdown) text_1
+# Automobile Recalls
+The complete recall dataset from the [NHTSA](https://www.nhtsa.gov/) (National Highway Traffic Safety Administration), covering 26,000+ recalls from 1966 to 2022.
+
+Source data: https://catalog.data.gov/dataset/recalls-data
+
+## Explore Auto Recalls
+Every tile reads the filters above: narrow to a manufacturer, a subject, major recalls only, or a span of report dates.
+|##
+
+import './auto_recalls.malloy'
+
+// The report's own filters, bound on each tile below: the model stays semantic.
+# label="Manufacturer" control=multiselect suggest { source=recalls dimension=Manufacturer }
+given: manufacturer_filter :: filter<string> is f''
+# label="Subject"
+given: subject_filter :: filter<string> is f''
+# label="Major Recall"
+given: major_recall_filter :: filter<boolean> is f''
+# label="Recall Date"
+given: recall_date_range :: filter<date> is f''
+
+##|(markdown) text_2
+### Top 5 Manufacturers — Recall Trends Over Time
+|##
+
+##|(markdown) text_3
+### Recall Dashboard — Top 3 Manufacturers
+|##
+
+##|(markdown) text_4
+### Most Recent Recalls
+|##
+
+##|(markdown) text_5
+### Biggest Recalls of All Time (by vehicles affected)
+|##
+
+##|(markdown) text_6
+### Recalls by Component
+|##
+
+##|(markdown) text_7
+### Recalls Involving Brakes
+|##
+
+source: recalls_tiles is recalls extend {
+  where:
+    Manufacturer ~ $manufacturer_filter,
+    Subject ~ $subject_filter,
+    `Major Recall` ~ $major_recall_filter,
+    recall_date ~ $recall_date_range
+
+  view: tile_1 is by_year_manufacturer_line_chart
+
+  view: tile_2 is recall_dashboard + {limit: 3}
+
+  view: tile_3 is recent_recalls + {limit: 10}
+
+  view: tile_4 is biggest_recalls + {limit: 10}
+
+  view: tile_5 is by_component + {limit: 15}
+
+  view: tile_6 is recall_dashboard + {
+    where: `Recall Description` ~r'brake'
+  }
+}

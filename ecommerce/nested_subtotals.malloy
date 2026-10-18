@@ -1,0 +1,45 @@
+##| artifact { layout=linear title="Explainer: Nested Subtotals"
+  tiles=[
+    text_1 { kind=text },
+    text_2 { kind=text },
+    "order_items_tiles -> tile_1",
+    text_3 { kind=text },
+    "order_items_tiles -> tile_2"
+  ]
+}
+|##
+##|(markdown) text_1
+# Explainer: Nested Subtotals
+Malloy great at nested subtotals.  See how Malloy differs from SQL.
+|##
+
+import {order_items} from "./ecommerce.malloy"
+
+##|(markdown) text_2
+### Calculate nested subtotals, one dimension
+|##
+
+##|(markdown) text_3
+### Calculate nested subtotals, two dimensions:
+|##
+
+source: order_items_tiles is order_items extend {
+  view: tile_1 is sales_summary_yoy + {
+    nest: sales_summary_yoy + {
+      group_by: inventory_items.product_department
+      order_by: product_department
+    }
+  }
+
+  view: tile_2 is sales_summary_yoy + {
+    nest: sales_summary_yoy + {
+      group_by: inventory_items.product_department
+      order_by: product_department
+      nest: sales_summary_yoy + {
+        group_by: inventory_items.product_category
+        order_by: sales_growth desc
+        limit: 3
+      }
+    }
+  }
+}

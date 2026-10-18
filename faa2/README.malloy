@@ -1,0 +1,26 @@
+##| artifact { layout=linear title="FAA Dataset"
+  tiles=[
+    text_1 { kind=text },
+    "airports_tiles -> tile_1"
+  ]
+}
+|##
+##|(markdown) text_1
+# FAA Dataset
+The NTSB FAA Dataset includes information about flights, airports, carriers, and aircrafts. We are providing here a small subset of the full dataset (available in BigQuery) for the purpose of trying out Malloy.
+
+**IMPORTANT NOTE**: this dataset is a partial sample for demonstration only, and to properly analyze the data, the full dataset available in BigQuery should be used.
+
+Analysis
+
+* [Carrier Analysis](carrier_analysis.malloy)
+* [Aircraft Manufacturer Analysis](aircraft_analysis.malloy)
+* [Destination Analysis](destination_analysis.malloy)
+* [Sessionization - Tracking individual planes](sessionization.malloy)
+|##
+
+import "./airports.malloy"
+
+source: airports_tiles is airports extend {
+  view: tile_1 is by_facility_type
+}

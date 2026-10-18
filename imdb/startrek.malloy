@@ -1,0 +1,19 @@
+##| artifact { layout=linear title="Star Trek dashboard"
+  tiles=[
+    text_1 { kind=text },
+    "movies_tiles -> tile_1"
+  ]
+}
+|##
+##|(markdown) text_1
+# Star Trek dashboard
+All the Star Trek movies.
+|##
+
+import {movies} from "./imdb.malloy" 
+
+source: movies_tiles is movies extend {
+  view: tile_1 is titles_dashboard + {
+    where: primaryTitle ~ r'Star Trek' and startYear < 2020
+  }
+}

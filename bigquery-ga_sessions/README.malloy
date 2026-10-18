@@ -1,0 +1,20 @@
+##| artifact { layout=linear title="Analyzing GA Session Data with Malloy"
+  tiles=[
+    text_1 { kind=text },
+    "ga_sessions_tiles -> tile_1"
+  ]
+}
+|##
+##|(markdown) text_1
+# Analyzing GA Session Data with Malloy
+
+This notebook imports a Malloy model from `./ga_sessions.malloy` and builds a dashboard to show GA session data from many different slices.
+
+The model also makes use of tags for rendering, showing some of the elements as bar charts via the `# bar_chart` tag.
+|##
+
+import './ga_sessions.malloy'
+
+source: ga_sessions_tiles is ga_sessions extend {
+  view: tile_1 is sessions_dashboard
+}

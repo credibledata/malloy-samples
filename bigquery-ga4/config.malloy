@@ -1,2 +1,6 @@
-// Update this source to point to your own GA4 export table in BigQuery:
-source: events_table is bigquery.table('bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*')
+// Update this source to point to your own GA4 export table in BigQuery. The export is a
+// wildcard table (one table per day), which a SQL source names; `bigquery.table()` takes a
+// single table path.
+source: events_table is bigquery.sql("""
+  SELECT * FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
+""")

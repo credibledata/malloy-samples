@@ -103,14 +103,14 @@ source: ga_sessions is bigquery.table('bigquery-public-data.google_analytics_sam
     nest: by_region
     nest: by_category
   }
-}
 
-#(doc) Session overview dashboard combining region, device, source, and category views
-# dashboard
-query: sessions_dashboard is ga_sessions -> {
-  nest:
-    by_region
-    by_browser
-    by_source
-    by_category
+  #(doc) Session overview dashboard combining region, device, source, and category views
+  # dashboard
+  view: sessions_dashboard is {
+    nest:
+      by_region
+      by_browser
+      by_source
+      by_category
+  }
 }
