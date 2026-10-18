@@ -106,7 +106,7 @@ We can have as many nests as we like and we can change how each of the nested qu
 |##
 
 ##|(markdown) text_13
-## Next Up: [Composing with Queries](names2.malloynb)
+## Next Up: [Composing with Queries](names2.malloy)
 |##
 
 source: names_tiles is names extend {

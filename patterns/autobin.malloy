@@ -51,7 +51,7 @@ source: florida_airports is airports extend {
 
 ##|(markdown) text_4
 ## Elevation within states
-This binning even adapts when the queries are nested.
+This binning even adapts per group. Grouping by state in both stages gives each state its own bin size, and a third stage nests each state's histogram under it.
 
 Notice that all the binning is local to the individual states.  For example the bottom bin in Colorado starts at an elevation of 3000ish feet.
 |##
@@ -61,7 +61,8 @@ source: airports_tiles is airports extend {
   view: tile_1 is by_elevation
 
   // The same two stages as `by_elevation`, grouped by state in both: each state gets its own
-  // bin size, computed from its own range of elevations.
+  // bin size, computed from its own range of elevations. The third stage nests each state's
+  // bins under it, one row per state.
   #(docs) size=large
   view: tile_3 is {
     group_by: state
@@ -75,7 +76,16 @@ source: airports_tiles is airports extend {
       state
       elevation is floor(data.elevation / bin_size) * nullif(bin_size, 0) + bin_size / 2
     aggregate: airport_count is data.row_count.sum()
-    order_by: state, elevation
+  } -> {
+    group_by: state
+    aggregate: airport_count is airport_count.sum()
+    # bar_chart
+    nest: by_elevation is {
+      group_by: elevation
+      aggregate: airport_count is airport_count.sum()
+      order_by: elevation
+    }
+    order_by: state
   }
 }
 

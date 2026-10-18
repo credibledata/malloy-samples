@@ -43,7 +43,8 @@ source: airports is duckdb.table('data/airports.parquet') extend {
 |##
 
 ##|(markdown) text_3
-## Nested Query
+## Per Facility Type
+The same two stages, grouped by facility type in both: each type ranks its own top states, and the rest of its states fall into its own 'OTHER'.
 |##
 
 source: airports_tiles is airports extend {

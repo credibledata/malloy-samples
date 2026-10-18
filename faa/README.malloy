@@ -12,9 +12,9 @@ The NTSB FAA Dataset includes information about flights, airports, carriers, and
 
 Analysis
 
-* [Carrier Analysis](carrier_analysis.malloynb)
-* [Aircraft Manufacturer Analysis](aircraft_analysis.malloynb)
-* [Destination Analysis](destination_analysis.malloynb)
-* [Sessionization - Tracking individual planes](sessionization.malloynb)
+* [Carrier Analysis](carrier_analysis.malloy)
+* [Aircraft Manufacturer Analysis](aircraft_analysis.malloy)
+* [Destination Analysis](destination_analysis.malloy)
+* [Sessionization - Tracking individual planes](sessionization.malloy)
 <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/Logo_of_the_Federal_Aviation_Administration.svg" alt="FAA logo" width="256" height="256" />
 |##

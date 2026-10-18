@@ -11,13 +11,13 @@
 
 To run these examples, press '.' from github.com (which will bring you into VSCode and github.dev) and when prompted, install the Malloy extension.
 
-* [Basic IMDB Queries](imdb.malloynb) - Simple queries against the IMDB data model
-* [Harvard CS O50](harvard-cs050.malloynb) - Harvard beginning CS class has a section on SQL.  Here are the questions and and answers written in Malloy instead of SQL.
-* [Steven Spielberg](spielberg.malloynb) - What did he direct? When? Who does he commonly work with and on what?
-* [Genre Analysis](genre_analysis.malloynb) - Top movies, top people, popularity over time
-* [Genre Matrix](genre_matrix.malloynb) - Genre combinations tell you what to expect in a movie.  What are the top movies in each combination pair?
-* [Star Trek Dashboard](startrek.malloynb) - All the Star Trek Movies
-* [Tom Hanks in Detail](tomhanks.malloynb) - A very complete dashboard about Tom Hanks
+* [Basic IMDB Queries](imdb_analysis.malloy) - Simple queries against the IMDB data model
+* [Harvard CS O50](harvard-cs050.malloy) - Harvard beginning CS class has a section on SQL.  Here are the questions and and answers written in Malloy instead of SQL.
+* [Steven Spielberg](spielberg.malloy) - What did he direct? When? Who does he commonly work with and on what?
+* [Genre Analysis](genre_analysis.malloy) - Top movies, top people, popularity over time
+* [Genre Matrix](genre_matrix.malloy) - Genre combinations tell you what to expect in a movie.  What are the top movies in each combination pair?
+* [Star Trek Dashboard](startrek.malloy) - All the Star Trek Movies
+* [Tom Hanks in Detail](tomhanks.malloy) - A very complete dashboard about Tom Hanks
 
 ## About the IMDb Dataset
 

@@ -51,7 +51,7 @@ source: names2 is duckdb.table('usa_names.parquet') extend {
 
 ##|(markdown) text_2
 ## Running queries
-In malloy a query is expressed as `run: source -> view`.  In the [first section](names1.malloynb) all the queries were expressed literally with `{group_by ...}` but we can also just use a view named in the source.
+In malloy a query is expressed as `run: source -> view`.  In the [first section](names1.malloy) all the queries were expressed literally with `{group_by ...}` but we can also just use a view named in the source.
 |##
 
 ##|(markdown) text_3
@@ -61,7 +61,7 @@ We can, for example change the limit and add a filter.  Let's look at top 4 name
 
 ##|(markdown) text_4
 ## Combining Views
-In the [first section](names1.malloynb) we saw how nested queries work.  
+In the [first section](names1.malloy) we saw how nested queries work.  
 By combining two queries. we can see the top names in each decade.
 |##
 

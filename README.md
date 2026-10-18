@@ -30,7 +30,7 @@ If you are reading this on Github, you can run these examples directly from your
 
   * [Auto Recalls](auto_recalls/README.malloy)
   * [E-Commerce Example](ecommerce/README.malloy)
-  * [FAA Flight Data Example](faa/README.md)
+  * [FAA Flight Data Example](faa/README.malloy)
   * [IMDB](imdb/README.malloy)
 
 
