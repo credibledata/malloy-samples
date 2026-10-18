@@ -1,10 +1,5 @@
 // Auto Recalls: CSV example
 ##! m4warnings
-#(filter) name=Manufacturer dimension=Manufacturer type=in
-#(filter) name=Subject dimension=Subject type=like
-#(filter) name="Major Recall" dimension="Major Recall" type=equal
-#(filter) name="Recall After" dimension="Report Received Date" type=greater_than
-#(filter) name="Recall Before" dimension="Report Received Date" type=less_than
 #(doc) NHTSA automobile recall data (1966–2022). Use for recall trends, manufacturer safety analysis, component failure patterns, and identifying major recalls.
 source: recalls is duckdb.table('data/auto_recalls.csv') extend {
   primary_key: `NHTSA ID`

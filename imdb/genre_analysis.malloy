@@ -1,0 +1,32 @@
+##| artifact { layout=linear title="Genre Analysis"
+  tiles=[
+    text_1 { kind=text },
+    "movies_tiles -> tile_1"
+  ]
+}
+|##
+##|(markdown) text_1
+# Genre Analysis
+Top movies, top people, popularity over time
+|##
+
+import {movies} from "./imdb.malloy" 
+
+source: movies_tiles is movies extend {
+  view: tile_1 is {
+    where: startYear ? > 1940 & < 2020
+    group_by: genre is genres.value
+       aggregate: 
+        title_count, 
+        total_ratings
+        percent_of_titles
+    nest: top_titles is title_list + {limit:10}
+    nest: top_directors
+
+    # line_chart
+    nest: by_year is {
+      group_by: startYear
+      aggregate: percent_of_titles is title_count/exclude(title_count, genre)*100
+    }
+  }
+}

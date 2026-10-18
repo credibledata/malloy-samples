@@ -1,0 +1,200 @@
+##| artifact { layout=linear title="Name Analysis"
+  tiles=[
+    text_1 { kind=text },
+    text_2 { kind=text },
+    text_3 { kind=text },
+    "names_tiles -> tile_1",
+    text_4 { kind=text },
+    "names_tiles -> tile_2",
+    text_5 { kind=text },
+    "names_tiles -> tile_3",
+    text_6 { kind=text },
+    "names_tiles -> tile_4",
+    text_7 { kind=text },
+    "names_tiles -> tile_5",
+    text_8 { kind=text },
+    "names_tiles -> tile_6",
+    text_9 { kind=text },
+    "names_tiles -> tile_7",
+    text_10 { kind=text },
+    "names_tiles -> tile_8",
+    text_11 { kind=text },
+    "names_tiles -> tile_9",
+    text_12 { kind=text },
+    "names_tiles -> tile_10",
+    text_13 { kind=text }
+  ]
+}
+|##
+##|(markdown) text_1
+# Name Analysis
+This is a dataset of USA baby name popularity over time from the Social Security Administration. It's a simple dataset, but there are lots of interesting insights we can pull from it using Malloy.
+
+The dataset is a single table with 5 columns:
+
+* name - the name of the child
+* gender - 'M' or 'F'
+* year - the birth year of the child
+* state - the state that the child was born in
+* number - the number of children born with that name/gender/year/state
+|##
+
+##|(markdown) text_2
+## The semantic data model
+In order to analyze this data, we're going to rename a couple of columns and build some reusable calculations.  `total_population` is a measure and can be used in an `aggregate:` calculation.  Decade is computed from year, and can be used in a `group_by:` or `select:`.  Click on 'Schema' to see the data that is provided.
+|##
+
+source: names is duckdb.table('usa_names.parquet') extend {
+  rename: year_born is `year`   // 'year' is a reserved keyword in Malloy
+  rename: population is `number`  // 'number' is a reserved keyword in Malloy
+
+  measure:
+    total_population is population.sum()
+
+  dimension: 
+    decade is floor(year_born/10)*10
+}
+
+##|(markdown) text_3
+## How many people are in this dataset?
+Using `aggregate:` we can make a computation that encompasses all the the data in the table.
+|##
+
+##|(markdown) text_4
+## What are the most common names and gender in this dataset?
+To answer this question, the query below produces a table sorted by `total_population`. By default, Malloy sorts results in descending order by the first aggregate calculation.
+|##
+
+##|(markdown) text_5
+## What are the most common Female names in the dataset?
+We can answer this by using the query above and addinga filter on gender.
+|##
+
+##|(markdown) text_6
+## Population over time
+Most transactional data sets include some notion of time.  We can produce a simple table by grouping by `decade`.  Notice that `decade` is a dimension declared in the source and not something in the table.
+|##
+
+##|(markdown) text_7
+## Change the view to a line chart.
+By simply adding `# line_chart` above the query, we tag it to be rendered that way.  This line chart takes to columns as input, a time or number and another number.
+|##
+
+##|(markdown) text_8
+## Compare 'Linda' and 'Elizabeth' over decades
+In a line chart, we can optionally have a third parameter is a dimension.  In this case it is 'Elizabeth' or 'Linda'
+|##
+
+##|(markdown) text_9
+## States.
+Geography is also interesting.  Let's look at this data by state.
+|##
+
+##|(markdown) text_10
+## Showing as a Map
+Malloy show data on maps.  By tagging this query with `# shape_map` we can see the query above as a shape Map.
+|##
+
+##|(markdown) text_11
+## Nesting - Compute the most popular names in each decade
+One of the most powerful features of Malloy is nesting queryies.  The query below shows population by decade and for each decade, shows the top names.
+|##
+
+##|(markdown) text_12
+##  J names by decade and state
+We can have as many nests as we like and we can change how each of the nested queries are rendered.
+|##
+
+##|(markdown) text_13
+## Next Up: [Composing with Queries](names2.malloynb)
+|##
+
+source: names_tiles is names extend {
+  view: tile_1 is {
+    aggregate: total_population
+  }
+
+  view: tile_2 is {
+    group_by: 
+      name
+      gender
+    aggregate: 
+      total_population
+    limit: 10
+  }
+
+  view: tile_3 is {
+    where: gender = 'F'
+    group_by: 
+      name
+    aggregate: 
+      total_population
+    limit: 10
+  }
+
+  view: tile_4 is {
+    group_by: decade
+    aggregate: total_population
+    order_by: decade
+  }
+
+  # line_chart
+  view: tile_5 is {
+    group_by: decade
+    aggregate: total_population
+    order_by: decade
+  }
+
+  # line_chart
+  view: tile_6 is {
+    where: name = 'Elizabeth' | 'Linda' 
+    group_by: decade
+    aggregate:
+      total_population
+    group_by: name
+    order_by: decade
+  }
+
+  view: tile_7 is {
+    group_by: state
+    aggregate: total_population
+  }
+
+  # shape_map
+  view: tile_8 is {
+    group_by: state
+    aggregate: total_population
+  }
+
+  view: tile_9 is {
+    group_by: decade
+    aggregate: total_population
+    order_by: decade desc
+    nest: top_names is {
+      group_by: name, gender
+      aggregate: total_population
+      limit: 6
+    }
+  }
+
+  view: tile_10 is {
+    where: name ~ 'J%'
+    group_by: decade
+    order_by: decade desc
+    nest: top_names is {
+      group_by: name
+      aggregate: total_population
+      limit: 6
+    }
+    # shape_map
+    nest: by_state is {
+      group_by: state
+      aggregate: total_population
+    }
+    # line_chart 
+    nest: by_year is {
+      group_by: year_born
+      aggregate: total_population
+    }
+  }
+}

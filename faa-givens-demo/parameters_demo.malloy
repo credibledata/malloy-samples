@@ -1,0 +1,21 @@
+##| artifact { layout=linear title="Carriers — Runtime Parameters Demo"
+  tiles=[
+    text_1 { kind=text },
+    "spotlight_flights_tiles -> tile_1",
+    "spotlight_flights_tiles -> tile_2"
+  ]
+}
+|##
+##|(markdown) text_1
+# Carriers — Runtime Parameters Demo
+
+This notebook demonstrates Malloy [`given:`](https://docs.malloydata.dev/documentation/experiments/givens) runtime parameters in Publisher. Change the **carrier** or **after** values in the Parameters panel above to re-run the queries with new parameter values.
+|##
+
+import "./carriers_with_parameters.malloy"
+
+source: spotlight_flights_tiles is spotlight_flights extend {
+  view: tile_1 is carrier_overview
+
+  view: tile_2 is by_destination
+}

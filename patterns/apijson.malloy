@@ -1,0 +1,33 @@
+##| artifact { layout=linear title="Querying JSON Data"
+  tiles=[
+    text_1 { kind=text },
+    text_2 { kind=text },
+    "exchange_rates_tiles -> tile_1"
+  ]
+}
+|##
+##|(markdown) text_1
+# Querying JSON Data
+
+DuckDB can read JSON files directly, and Malloy makes it simple to transform the resulting data. The example below reads exchange rate data from the US Treasury and shows the data by currency over time.
+|##
+
+source: exchange_rates is 
+  duckdb.table('exchange_rates.json')
+
+##|(markdown) text_2
+## Query by Country
+This query builds a line chart showing exchange rate values over time. With a simple Malloy query, we can easily transform and analyze a dataset directly from an HTTP API, without any intermediate database required.
+|##
+
+source: exchange_rates_tiles is exchange_rates extend {
+  #(docs) limit=5000 size=large
+  view: tile_1 is {
+    group_by: data.country_currency_desc
+    # line_chart
+    nest: by_date is  {
+      group_by: data.record_date
+      aggregate: rate is data.avg(data.exchange_rate::number)
+    }
+  }
+}

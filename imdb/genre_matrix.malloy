@@ -1,0 +1,34 @@
+##| artifact { layout=linear title="Genres Matrix"
+  tiles=[
+    text_1 { kind=text },
+    text_2 { kind=text },
+    "movies_tiles -> tile_1"
+  ]
+}
+|##
+##|(markdown) text_1
+# Genres Matrix
+Genre combinations tell you what to expect in a movie.  What are the top movies in each combination pair?
+|##
+
+import {movies} from "./imdb.malloy" 
+
+##|(markdown) text_2
+## Genre matrix, top movies
+|##
+
+source: movies_tiles is movies extend {
+  view: tile_1 is {
+    where: genre2 != genre
+    group_by: genre2
+    aggregate:  title_count
+    nest: genre is {
+      group_by: 
+        genre
+        genre2 
+      nest: title_list + {limit: 7}
+      nest: top_directors
+      nest: top_actors
+    }
+  }
+}

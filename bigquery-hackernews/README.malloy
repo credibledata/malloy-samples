@@ -1,0 +1,70 @@
+##| artifact { layout=linear title="Hacker News"
+  tiles=[
+    text_1 { kind=text },
+    text_2 { kind=text },
+    "stories_tiles -> tile_1",
+    text_3 { kind=text },
+    "stories_tiles -> tile_2",
+    text_4 { kind=text },
+    "stories_tiles -> tile_3",
+    text_5 { kind=text },
+    "stories_tiles -> tile_4"
+  ]
+}
+|##
+##|(markdown) text_1
+# Hacker News
+
+All the [Hacker News](https://news.ycombinator.com) posts, ever.
+|##
+
+import './hackernews.malloy'
+
+import './faang.malloy'
+
+##|(markdown) text_2
+# Term Dashboard - BigQuery
+Stories about BigQuery over time:
+|##
+
+##|(markdown) text_3
+# Posts over Time
+Graph of posts over time
+|##
+
+##|(markdown) text_4
+# Interesting or Not
+Most posts get no traction. `is_interesting` denotes a post with traction
+|##
+
+##|(markdown) text_5
+# Facebook, Apple, Amazon, Netflix and Google over time
+Graph of stories about FAANG companies over time
+|##
+
+source: stories_tiles is stories extend {
+  # dashboard
+  view: tile_1 is term_dashboard + {
+    where: title ~ r'BigQuery'
+  }
+
+  # line_chart
+  view: tile_2 is posts_over_time + { 
+    limit: 100000   
+  }
+
+  view: tile_3 is { 
+    group_by: is_interesting
+    aggregate:
+      post_count
+      # percent
+      pct_of_total is post_count / all(count())
+  }
+
+  # line_chart
+  view: tile_4 is posts_over_time + { 
+    where: is_interesting, faang != 'OTHER'
+    group_by: faang
+    limit: 100000 
+  }
+}
